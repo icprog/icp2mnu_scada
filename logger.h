@@ -5,6 +5,7 @@
 #include <QColor>
 #include <QMutex>
 #include <QDateTime>
+#include <QFile>
 
 //#include <list>
 

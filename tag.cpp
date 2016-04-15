@@ -41,7 +41,6 @@ FloatTag::operator float()
 {
     return GetValue();
 }
-
 //=================================================================================
 float FloatTag::operator = (const float & other)
 {

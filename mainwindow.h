@@ -14,6 +14,7 @@
 #include <QtScript/QScriptEngine>
 #include <QTimer>
 #include <QListWidgetItem>
+#include <QSystemTrayIcon>
 
 #include "logger.h"
 #include "alarm.h"
@@ -48,6 +49,7 @@ private:
     Ui::MainWindow *ui;
     Logger *logger;
     ScadaServer *ss;
+//    QSystemTrayIcon *trayIcon;
 
 
 public slots:

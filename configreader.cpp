@@ -86,7 +86,9 @@ bool ConfigReader::ReadNextNode(QString &objectName,QString &objectType,QString 
 
         QRegExp patternEmptyStr("^\\s*\\n*$");
 
-        if (node_conf_line[0]=='#' || patternEmptyStr.indexIn(node_conf_line)!=-1) continue;   //комментарии или пустые строки
+        if (node_conf_line.length()==0) continue;   //пустые строки
+
+        if (node_conf_line[0]=='#' || patternEmptyStr.indexIn(node_conf_line)!=-1) continue;   //комментарии или строки пробельных символов
 
         if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
 
@@ -139,7 +141,9 @@ bool ConfigReader::ReadNextTrend(QString &objectName, QString &trendName,uint &n
 
         QRegExp patternEmptyStr("^\\s*\\n*$");
 
-        if (node_conf_line[0]=='#' || patternEmptyStr.indexIn(node_conf_line)!=-1) continue;   //комментарии или пустые строки
+        if (node_conf_line.length()==0) continue;   //пустые строки
+
+        if (node_conf_line[0]=='#' || patternEmptyStr.indexIn(node_conf_line)!=-1) continue;   //комментарии или строки пробельных символов
 
         if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
 
@@ -195,7 +199,9 @@ bool ConfigReader::ReadNextAlarm(QString &alarmType, QString &alarmExpression, Q
 
         QRegExp patternEmptyStr("^\\s*\\n*$");
 
-        if (node_conf_line[0]=='#' || patternEmptyStr.indexIn(node_conf_line)!=-1) continue;   //комментарии или пустые строки
+        if (node_conf_line.length()==0) continue;   //пустые строки
+
+        if (node_conf_line[0]=='#' || patternEmptyStr.indexIn(node_conf_line)!=-1) continue;   //комментарии или строки пробельных символов
 
         if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
 
@@ -287,7 +293,9 @@ bool ConfigReader::ReadNextVirtualTag(QString &objectName,uint &numInBuff,QStrin
 
         QRegExp patternEmptyStr("^\\s*\\n*$");
 
-        if (node_conf_line[0]=='#' || patternEmptyStr.indexIn(node_conf_line)!=-1) continue;   //комментарии или пустые строки
+        if (node_conf_line.length()==0) continue;   //пустые строки
+
+        if (node_conf_line[0]=='#' || patternEmptyStr.indexIn(node_conf_line)!=-1) continue;   //комментарии или строки пробельных символов
 
         if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
 

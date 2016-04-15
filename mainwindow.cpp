@@ -9,7 +9,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
+/*
+    if (QSystemTrayIcon::isSystemTrayAvailable())
+    {
+        trayIcon=new QSystemTrayIcon(QIcon(":/icons/gear.ico"),this);
+        trayIcon->show();
+    }
+*/
     ss = ScadaServer::Instance();
 
     connect(ui->buttonClose,SIGNAL(clicked()),this,SLOT(close()));

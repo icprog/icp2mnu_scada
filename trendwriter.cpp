@@ -40,7 +40,9 @@ void TrendWriter::FuncFileWriter(CommonTrend *this_trend_info, char *str_date, u
 void TrendWriter::run()
 {
 
-    int itime,iprevtime=100;
+    int itime,iprevtime=-1;
+
+    static uint tr_cnt=0;
 
     for(;;)
     {
@@ -61,6 +63,13 @@ void TrendWriter::run()
                 if (ss->hashCommonNodes.contains(tr->m_objectName) && ss->hashCommonNodes[tr->m_objectName]->m_isReaded)
                 {
                     FuncFileWriter(tr,buf_date,time22);
+                }
+
+                tr_cnt++;  //уменьшение загрузки CPU,
+                if (tr_cnt >= 5)
+                {
+                    tr_cnt=0;
+                    msleep(10);
                 }
             }
         }

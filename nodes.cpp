@@ -165,6 +165,7 @@ void ModbusNode::run()
 
         if (m_isConnected)
         {
+
             res=modbus_read_registers(mb, m_modbus_start_address, m_srv.num_float_tags*2, tab_reg);
             if (res==m_srv.num_float_tags*2)
             {
@@ -172,11 +173,9 @@ void ModbusNode::run()
                 {
                     m_srv.buff[nn]=modbus_get_float(&tab_reg[nn*2]);
 
-
                 }
                 m_isReaded=true;
             }
-
             else  //error read? closing
             {
                 m_isConnected=false;
@@ -292,15 +291,18 @@ void MnuScadaNode::connected()
     emit textchange(m_this_number,m_nameObject,  "connected");
     emit textSave2LogFile(m_this_number,m_nameObject,  "connected");
 
-    if (isRunning()==false)
+    if (m_port_repl>0)  //если порт репликации > 0, если ==0-репликация отключена
     {
-        start();
-        emit textchange_repl(m_this_number,m_nameObject,  "tr.repl");
-    }
-    else
-    {
-        need_restart_repl=true;
+        if (isRunning()==false)
+        {
+            start();
+            emit textchange_repl(m_this_number,m_nameObject,  "tr.repl");
+        }
+        else
+        {
+            need_restart_repl=true;
 
+        }
     }
 
 }
@@ -496,6 +498,8 @@ void MnuScadaNode::run()
 {
     QTcpSocket repl_socket;
     int aligner=0;
+
+    if (m_port_repl==0) return;  //если порт=0 -> репликация выключена
 
     msleep(1000);
 

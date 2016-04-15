@@ -39,6 +39,25 @@ void LoggerWindow::AddMessage(QString what,QColor color)
     ui->listWidget->scrollToBottom();
     ui->listWidget->item(ui->listWidget->count()-1)->setForeground(color);
 
+
+    //13.04.2016 - Adding Logging to file
+    QString filename;
+
+    filename.sprintf("syslog\\%s.log",dt.toString("yyyy_MM_dd").toStdString().c_str());
+
+
+    QFile syslog(filename);
+
+    if (syslog.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+    {
+        QString record;
+        record.sprintf("%s --- %s\n",dt.toString("hh:mm:ss.zzz").toStdString().c_str(),
+                    what.toStdString().c_str());
+        syslog.write( record.toStdString().c_str());
+        syslog.close();
+    }
+
+
 }
 //=====================================================================
 Logger::Logger()
@@ -88,6 +107,6 @@ void Logger::AddLog(QString what, QColor color)
     //            {
     emit signalAddMessage(what, color);
     //            }
-    //            mutex.unlock();
+    //            mutex.unlock();    
 }
 //=====================================================================

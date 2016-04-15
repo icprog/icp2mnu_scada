@@ -117,21 +117,22 @@ Alarm::Alarm(Alarms *alarms, int id, AlarmLevel alarmlevel, AlarmType alarmtype,
     if (alarmlevel==Critical)
     {
         actColor.setRgb(255,0,0);
-        nonactColor.setRgb(177,182,184);
         act2Color.setRgb(255,128,128);
+        nonactColor.setRgb(177,182,184);
     }
+
     if (alarmlevel==Warning)
     {
-        actColor.setRgb(255,255,0);
+        actColor.setRgb(240,240,0);
+        act2Color.setRgb(255,255,155);
         nonactColor.setRgb(177,182,184);
-        act2Color.setRgb(177,182,184);
     }
 
     if (alarmlevel==Information)
     {
         actColor.setRgb(31,84,224);
-        nonactColor.setRgb(177,182,184);
         act2Color.setRgb(143,170,239);
+        nonactColor.setRgb(177,182,184);
     }
 
     if (alarmtype==OnValueChanged)
@@ -316,7 +317,7 @@ void Alarms::NewConnection()
     //lastClient=pClient;
 
     logger->AddLog("АЛАРМ: К серверу алармов подключился "+pClient->peerAddress().toString(),Qt::darkCyan);
-    alarmDB->AddAlarm2DB("До сервера алармів під`єднався "+pClient->peerAddress().toString());
+    //alarmDB->AddAlarm2DB("До сервера алармів під`єднався "+pClient->peerAddress().toString());
 
 }
 //======================================================================================
@@ -326,7 +327,7 @@ void Alarms::ClientDisconnected()
     QTcpSocket* pClient = static_cast<QTcpSocket*>(QObject::sender());
     m_pAlarmClientSocketList.removeOne(pClient);
     logger->AddLog("АЛАРМ: От сервера алармов отключился "+pClient->peerAddress().toString(),Qt::darkCyan);
-    alarmDB->AddAlarm2DB("Від сервера алармів від`єднався "+pClient->peerAddress().toString());
+    //alarmDB->AddAlarm2DB("Від сервера алармів від`єднався "+pClient->peerAddress().toString());
 
 }
 //===========================================================================================================
@@ -361,7 +362,7 @@ void Alarms::ClientWrite()
         qDebug() << alarm_message.ID << "  " << alarm_message.text;
 
     }
-    if (pClient->bytesAvailable()>0 && pClient->bytesAvailable()<sizeof(alarm_message_struct))  //осталось байт не кратное одной посылке, - херня,ошибка, не тот сервер
+    if (pClient->bytesAvailable()>0 && pClient->bytesAvailable()<sizeof(alarm_message_struct))  //осталось байт не кратное одной посылке, - ошибка, не тот сервер
     {
         pClient->disconnectFromHost();
     }
