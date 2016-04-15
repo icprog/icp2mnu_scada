@@ -9,6 +9,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    //TO DO - add system tray
 /*
     if (QSystemTrayIcon::isSystemTrayAvailable())
     {

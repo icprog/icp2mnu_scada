@@ -11,7 +11,7 @@ ScadaServer::ScadaServer()
 
     logger=Logger::Instance();
 
-    trend_path="d:\\MNU_SCADA\\trends\\";
+    //trend_path="d:\\MNU_SCADA\\trends\\";  - now using c++11 and constexpr
 
     for(int i=0; i<17280; i++)
     {

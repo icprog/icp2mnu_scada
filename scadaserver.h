@@ -33,9 +33,9 @@ public:
     void StartServer();
     void StopServer();
 
-    static const float min_float=-3.4028234663852886e+38;       //минимальное число float, используется как "пустое" значение,
-    //для отличия от NaN которое обозначает результат некоректного скриптового выражения
-    char *trend_path;//="d:\\MNU_SCADA\\trends\\";   //C++11 'constexpr' only available with -std=c++11 or -std=gnu++11
+    constexpr static const float min_float=-3.4028234663852886e+38;   //минимальное число float, используется как "пустое" значение,
+                                                                      //для отличия от NaN которое обозначает результат некоректного скриптового выражения
+    constexpr static const char *const trend_path="d:\\MNU_SCADA\\trends\\";   //C++11 'constexpr' only available with -std=c++11 or -std=gnu++11
     float empty_file[17280];
     //Подсистемы СКАДы
     //АЛАРМЫ

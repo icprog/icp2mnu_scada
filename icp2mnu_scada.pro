@@ -11,6 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = icp2mnu_scada
 TEMPLATE = app
 
+CONFIG += c++11
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -27,7 +28,8 @@ SOURCES += main.cpp\
     configreader.cpp \
     nodedataviewer.cpp \
     scadaserver.cpp \
-    trendwriter.cpp
+    trendwriter.cpp \
+    SingleApplication/singleapplication.cpp
 
 HEADERS  += mainwindow.h \
     autostopthread.h \
@@ -40,7 +42,8 @@ HEADERS  += mainwindow.h \
     configreader.h \
     nodedataviewer.h \
     scadaserver.h \
-    trendwriter.h
+    trendwriter.h \
+    SingleApplication/singleapplication.h
 
 FORMS    += mainwindow.ui \
     logger.ui \
@@ -54,3 +57,4 @@ RC_FILE = myapp.rc
 RESOURCES += \
     res.qrc
 
+DEFINES += QAPPLICATION_CLASS=QApplication # for using Single Application
