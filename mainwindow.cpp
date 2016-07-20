@@ -409,6 +409,7 @@ void MainWindow::pushTestButton()
     static int first_call=true;
 
     static QScriptEngine engine;
+    /*
     if (first_call)
     {
         QString fileName = qApp->applicationDirPath()+"\\mnu_scada.js";
@@ -430,6 +431,9 @@ void MainWindow::pushTestButton()
     }
     first_call=false;
 
+    */
+    float res=engine.evaluate(ui->lineEdit->text()).toNumber();
+    ui->testButton->setText(QString::number(res));
 }
 //===================================================================================================
 bool MainWindow::CheckHash()

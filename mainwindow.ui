@@ -268,9 +268,12 @@
        </widget>
       </item>
       <item>
+       <widget class="QLineEdit" name="lineEdit"/>
+      </item>
+      <item>
        <widget class="QPushButton" name="testButton">
         <property name="text">
-         <string>PushButton</string>
+         <string>Evaluate script</string>
         </property>
        </widget>
       </item>

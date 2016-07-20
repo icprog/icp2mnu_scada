@@ -630,13 +630,21 @@ void MnuScadaNode::run()
                                         trend_file.seek(pos_start*4);//,CFile::begin);
                                         trend_file.write((char *)buff_new,(request.Count)*4);
                                         //trend_file.Flush();
-                                        if (CheckThreadStop())
-                                        {
-                                            qDebug() << m_nameObject << " thread repl stop1";
-                                            return;
-                                        }
                                     }
                                 }
+
+                                if (CheckThreadStop())
+                                {
+                                    qDebug() << m_nameObject << " thread repl stop1";
+                                    return;
+                                }
+
+                                if (m_isConnected==false)  // socket which read current data disconnected, so close replication thread too
+                                {
+                                    qDebug() << m_nameObject << " thread repl stop network disconnected";
+                                    return;
+                                }
+
                                 msleep(250); // delay for decrease CPU usage
                             }
                         }

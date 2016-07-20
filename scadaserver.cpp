@@ -155,7 +155,7 @@ void ScadaServer::TimerEvent1s_setAlarmsTags()
                 foreach(alarm_expr_member_struct alarmExprMember, alarmDescStruct.vectAlarmExprMembers)
                 {
                     tmp_alarmExpression.replace(alarmExprMember.objectName+"["+QString::number(alarmExprMember.numInBuff)+"]",
-                                                QString::number(hashCommonNodes[alarmExprMember.objectName]->m_srv.buff[alarmExprMember.numInBuff]));
+                                                "("+QString::number(hashCommonNodes[alarmExprMember.objectName]->m_srv.buff[alarmExprMember.numInBuff])+")");
 
 
                 }
@@ -166,7 +166,7 @@ void ScadaServer::TimerEvent1s_setAlarmsTags()
                 {
                     tmp_TagValue=0.0;
                     tmp_TagQuality=false;
-                    logger->AddLog("ERROR evaluate alarm formula: "+alarmDescStruct.alarmExpression, Qt::red);
+                    logger->AddLog("ERROR evaluate alarm formula: "+alarmDescStruct.alarmExpression+"=="+tmp_alarmExpression, Qt::red);
                 }
             }
             else
