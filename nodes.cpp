@@ -5,7 +5,7 @@
 uint CommonNode::nodes_counter=0;
 
 
-//сравнение для сортировки по убыванию длины имени объекта, лямбду не принимает
+//сравнение для сортировки по убыванию длины имени объекта, лямбду не принимает, не включен с++11
 bool operator<(const virt_expr_member_struct &a, const virt_expr_member_struct &b)
 {
     return a.objectName.length() > b.objectName.length();
@@ -642,6 +642,7 @@ void MnuScadaNode::run()
                                 if (m_isConnected==false)  // socket which read current data disconnected, so close replication thread too
                                 {
                                     qDebug() << m_nameObject << " thread repl stop network disconnected";
+                                    emit textchange_repl(m_this_number,m_nameObject, "");
                                     return;
                                 }
 
