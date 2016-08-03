@@ -36,6 +36,8 @@ ConfigReader::ConfigReader()
 {
     foundSectionNodes=false;
     foundSectionTrends=false;
+    foundSectionAlarms=false;
+    foundSectionVirtualControllers=false;
 }
 //================================================================
 void ConfigReader::SetConfigFileName(QString fileName)

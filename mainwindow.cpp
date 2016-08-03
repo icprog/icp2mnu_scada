@@ -406,7 +406,7 @@ void MainWindow::TextSave2LogFile(int iUzel, QString objectName, QString newText
 //=========================================================================================
 void MainWindow::pushTestButton()
 {
-    static int first_call=true;
+   // static int first_call=true;
 
     static QScriptEngine engine;
     /*

@@ -5,7 +5,7 @@
 uint CommonNode::nodes_counter=0;
 
 
-//сравнение для сортировки по убыванию длины имени объекта, лямбду не принимает, не включен с++11
+//сравнение для сортировки по убыванию длины имени объекта, лямбду не принимает, не включен с++11 - включил но переписывать не буду
 bool operator<(const virt_expr_member_struct &a, const virt_expr_member_struct &b)
 {
     return a.objectName.length() > b.objectName.length();
@@ -215,7 +215,7 @@ MnuScadaNode::MnuScadaNode(int this_number, QString objectName, QString objectTy
     m_modbus_start_address=modbus_start_address;
     m_srv.num_float_tags=num_float_tags;
     m_num_reads=0;
-    m_sec_counter=1;
+    m_sec_counter=0;
 
     connect(socket, SIGNAL(connected()),this, SLOT(connected()));
     connect(socket, SIGNAL(disconnected()),this, SLOT(disconnected()));
@@ -260,15 +260,16 @@ void MnuScadaNode::TimerConnectLoopEvent()
 {
 //    qDebug() << "timer connect loop event: ";
 
-    if (getStateConnected()==false && getStateConnecting()==false)
+    //попытки подключения каждые 10 сек.
+    if (m_sec_counter%10==0 && getStateConnected()==false && getStateConnecting()==false)
     {
         doConnect();
 
     }
 
-    //if no data 20 seconds - reconnect
+    //if no data 30 seconds - reconnect
 
-    if (m_sec_counter==0) //раз в 20 секунд
+    if (m_sec_counter==25) //раз в 30 секунд, на 25 секунде
     {
         if (m_num_reads==0 && getStateConnected()==true)
         {
@@ -278,7 +279,7 @@ void MnuScadaNode::TimerConnectLoopEvent()
         m_num_reads=0;
     }
 
-    m_sec_counter=(m_sec_counter+1)%20;
+    m_sec_counter=(m_sec_counter+1)%30;  //30sec
 
 }
 //====================================================================================
@@ -288,6 +289,7 @@ void MnuScadaNode::connected()
 
     m_isReaded=false;
     m_isConnected=true;
+    m_num_reads=1;
     emit textchange(m_this_number,m_nameObject,  "connected");
     emit textSave2LogFile(m_this_number,m_nameObject,  "connected");
 
@@ -310,6 +312,7 @@ void MnuScadaNode::connected()
 void MnuScadaNode::error(QAbstractSocket::SocketError err)
 {
     socket->disconnectFromHost();
+    emit textSave2LogFile(m_this_number,m_nameObject,  "socket error!!!");
     qDebug() << m_nameObject << " error " + QString::number(err);
     m_isReaded=false;
 }
@@ -345,6 +348,7 @@ void MnuScadaNode::readyRead()
     else
     {
         socket->disconnectFromHost();
+        emit textSave2LogFile(m_this_number,m_nameObject,  "socket read error(byte count)!!!");
         m_isReaded=false;
     }
 }
@@ -616,12 +620,12 @@ void MnuScadaNode::run()
                                 //qDebug() << "request: " << request.Position;
                                 //qDebug() << "request: " << request.Count;
 
-                                float buff_new[300];
                                 int result;
                                 result=repl_socket.write((char *)&request,sizeof(request));
 
                                 if (result!=SOCKET_ERROR)
                                 {
+                                    float buff_new[300];
                                     repl_socket.waitForReadyRead(5000);
                                     result=repl_socket.read((char *)buff_new,(request.Count)*4);
 
@@ -732,10 +736,10 @@ void VirtualNode::TimerCalculateVariablesEvent()
     //считаем значения
     if (allControllersConnected)
     {
-        float tmp_TagValue=0.0;
 
         foreach(virt_tag_struct virtTag,vectVirtTags)
         {
+            float tmp_TagValue=0.0;
             QString tmp_virtTagExpression;
             tmp_virtTagExpression=virtTag.virtTagExpression;
 
