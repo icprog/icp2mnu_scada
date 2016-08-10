@@ -42,7 +42,7 @@ void TrendWriter::run()
 
     int itime,iprevtime=-1;
 
-    static uint tr_cnt=0;
+    uint tr_cnt=0;
 
     for(;;)
     {

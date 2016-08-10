@@ -1,6 +1,5 @@
 #include "nodes.h"
 
-
 //allocate memory for static member
 uint CommonNode::nodes_counter=0;
 
@@ -311,8 +310,9 @@ void MnuScadaNode::connected()
 //=====================================================================================
 void MnuScadaNode::error(QAbstractSocket::SocketError err)
 {
+
+    emit textSave2LogFile(m_this_number,m_nameObject,  "socket error: " + QString::number(err));
     socket->disconnectFromHost();
-    emit textSave2LogFile(m_this_number,m_nameObject,  "socket error!!!");
     qDebug() << m_nameObject << " error " + QString::number(err);
     m_isReaded=false;
 }
@@ -341,15 +341,25 @@ void MnuScadaNode::readyRead()
     // read the data from the socket
     if (socket->bytesAvailable()==m_srv.num_float_tags*4)
     {
-        socket->read((char *)(m_srv.buff),socket->bytesAvailable());
+        socket->read((char *)(m_srv.buff), m_srv.num_float_tags*4);
         m_isReaded=true;
         m_num_reads++;
     }
     else
     {
-        socket->disconnectFromHost();
-        emit textSave2LogFile(m_this_number,m_nameObject,  "socket read error(byte count)!!!");
-        m_isReaded=false;
+        emit textSave2LogFile(m_this_number,m_nameObject,  "socket read error(byte count)!!! - recv "+QString::number(socket->bytesAvailable())+
+                                                           ", need "+QString::number(m_srv.num_float_tags*4));
+        /*  - посчитал излишним, достаточно очистить буфер
+        if (socket->bytesAvailable()>0 &&  (socket->bytesAvailable() % (m_srv.num_float_tags*4) == 0))  //пакет данных кратен требуемому, по логам такое бывает
+        {                                                                                               //читаем первую партию
+            socket->read((char *)(m_srv.buff), m_srv.num_float_tags*4);
+            m_isReaded=true;
+            m_num_reads++;
+        }
+        */
+        socket->readAll(); //очищаем буффер приема
+       //socket->disconnectFromHost();
+       // m_isReaded=false;
     }
 }
 //===========================================================================================
