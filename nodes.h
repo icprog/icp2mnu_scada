@@ -177,7 +177,34 @@ public slots:
 };
 //================================================================
 
+/*
+  Узел для реализации протокола РЕГИОН - протокол телеметрии  погружных
+  насосов скважин (комплекс ТРИОЛ, там контроллер УМКА)
+  Передача по модбасРТУ, потом модемом преобразовывается в модбасТСП.
+  Специфика в том, что данные передаются как двухбайтный инт., со
+  сдвигом десятичной запятой при необходимости. Передается 32 параметра
+  адреса начинаются с 0x0100 в области INPUT REGISTERS (30xxxx)(т.е.
+  диапазон десятичный адресов - 30257-30288)
 
 
+*/
+
+class RegionNode: public CommonNode
+{
+    Q_OBJECT
+public:
+    explicit RegionNode(int this_number,QString objectName,QString objectType,
+                        QString IP_addr, uint port,
+                        uint port_repl,uint port_local,
+                        uint modbus_start_address,
+                        uint num_float_tags);
+    virtual ~RegionNode()
+    {
+        ;
+    }
+    virtual void run();   // poll loop thread
+};
+
+//==============================================================
 
 #endif // NODES_H

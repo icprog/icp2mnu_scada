@@ -57,6 +57,14 @@ CommonNode* CommonNode::CreateNode(QString objectName,QString objectType,
 
     }
 
+    if (objectType=="region")
+    {
+        node = new RegionNode(nodes_counter,objectName,objectType,
+                               IP_addr, port,port_repl,port_local,
+                               modbus_start_address,num_float_tags);
+
+    }
+
     nodes_counter++;
     return node;
 }
@@ -798,3 +806,149 @@ void VirtualNode::TimerCalculateVariablesEvent()
 
 }
 //=========================================================================================
+RegionNode::RegionNode(int this_number,QString objectName,QString objectType,
+                       QString IP_addr, uint port,
+                       uint port_repl,uint port_local,
+                       uint modbus_start_address,
+                       uint num_float_tags)
+{
+    m_this_number=this_number;
+
+    m_nameObject=objectName;
+    m_typeObject=objectType;
+    m_IP_addr=IP_addr;
+    m_port=port;
+    m_port_repl=port_repl;
+    m_port_local=port_local;
+    m_modbus_start_address=modbus_start_address;
+    m_srv.num_float_tags=num_float_tags;
+
+    start();
+}
+//================================================================================
+void RegionNode::run()
+{
+    int res;
+
+    modbus_t *mb;
+    uint16_t tab_reg[200];
+
+
+    float multipliers[32]={
+            1.0, //0  Код причины останова
+            1.0, //1  Состояние СУ+причины, мешающие запуску
+            0.1, //2  Ток фазы А, Ампер
+            0.1, //3  Ток фазы В
+            0.1, //4  Ток фазы С
+            1.0, //5  Дисбаланс токов, %
+            1.0, //6  Напряжение АВ, Вольт
+            1.0, //7  Напряжение ВС, Вольт
+            1.0, //8  Напряжение СА, Вольт
+            1.0, //9  Дисбаланс напряжений, %
+            1.0, //10 Сопротивление изоляции, кОм
+            0.01,//11 Коэффициент мощности (cos F)
+            1.0, //12 Коэффициент загрузки
+            1.0, //13 Активная мощность, кВт
+            0.1, //14 Ток двигателя, А
+            1.0, //15 Температура двигателя, С
+            0.01,//16 Давление на приеме насоса, атм
+            0.01,//17 Рабочая частота, Гц
+            0.01,//18 Выходная частота, Гц
+            1.0, //19 Выходной ток (полный ток СУ), А
+            1.0, //20 Выходное напряжение, В
+            1.0, //21 Ток в звене постоянного напряжения, В
+            1.0, //22 Динамический уровень, м
+            1.0, //23 Общее количество пусков, ед.
+            1.0, //24 Устьевое давление (буферное давление), атм
+            1.0, //25 Затрубное давление, атм
+            1.0, //26 Линейное давление, атм
+            1.0, //27 Температура на приеме насоса (температура пласт. жидкости, температура окружения), С
+            1.0, //28 Вибрация насоса по оси X, м/с2
+            1.0, //29 Вибрация насоса по оси Y, м/с2
+            1.0, //30 Давление на выкиде насоса, атм
+            1.0, //31 Температура на выкиде насоса, С
+
+            };
+
+
+
+    if (m_IP_addr.isEmpty())
+    {
+        //QMessageBox::information(this,"Configuration message","Your configuration is incorrect - no IP address!!!",QMessageBox::Ok);
+        emit textchange(m_this_number, m_nameObject, "ERROR-No IP adress!!!");
+        return;
+    }
+
+    //inialized context
+    mb = modbus_new_tcp(m_IP_addr.toStdString().c_str(), m_port);
+
+    //специфика подключений объектов по этому протоколу  - соединение по GPRS, увеличиваем таймаут ответа
+    timeval response_timeout;  // set response timeout to 5 second becouse data transferred througth GPRS connection
+    response_timeout.tv_sec=5;
+    modbus_set_response_timeout(mb, &response_timeout);
+
+    for(;;)
+    {
+        //connect if not connected
+        if(!m_isConnected)
+        {
+
+            res=modbus_connect(mb);
+
+            if (res!=-1)
+            {
+                m_isConnected=true;
+                modbus_set_slave(mb, 1);
+
+
+
+                emit textchange(m_this_number,m_nameObject,  "connected");
+                emit textSave2LogFile(m_this_number,m_nameObject,  "connected");
+                //srv->m_pServerSocket->setSocketOption(QAbstractSocket:: KeepAliveOption, 1);
+            }
+            else
+            {
+                m_isConnected=false;
+                //emit textchange(m_this_number,m_nameObject,  "connecting failure");
+            }
+
+        }
+
+        if (m_isConnected)
+        {
+
+            res=modbus_read_input_registers(mb, m_modbus_start_address, m_srv.num_float_tags, tab_reg);
+
+            if (res==m_srv.num_float_tags)
+            {
+                for (uint nn=0; nn < m_srv.num_float_tags; ++nn)
+                {
+                    m_srv.buff[nn]=tab_reg[nn]*multipliers[nn];
+
+                }
+                m_isReaded=true;
+            }
+            else  //error read? closing
+            {
+                m_isConnected=false;
+                m_isReaded=false;
+                modbus_close(mb);
+                emit textchange(m_this_number,m_nameObject,  "disconnected");
+                emit textSave2LogFile(m_this_number,m_nameObject,  "disconnected");
+            }
+
+
+        }
+
+
+        for(int i=0; i<50; ++i) //было 22 - 4.4 sec delay, стало 10 с
+        {
+            if (CheckThreadStop()) return;
+            Sleep(200);
+        }
+
+    }//for(;;)
+
+
+}
+//======================================================================================================
