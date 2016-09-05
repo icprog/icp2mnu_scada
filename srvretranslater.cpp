@@ -20,6 +20,7 @@ void SrvReTranslater::NewConnection()
     m_pClientSocketList.push_back(pClient);
 
     connect(pClient, SIGNAL(disconnected()), this, SLOT(ClientDisconnected()));
+    connect(pClient, SIGNAL(readyRead()), this, SLOT(ClientSendData()));
     //lastClient=pClient;
 }
 //======================================================================================
@@ -29,4 +30,11 @@ void SrvReTranslater::ClientDisconnected()
     QTcpSocket* pClient = static_cast<QTcpSocket*>(QObject::sender());
     m_pClientSocketList.removeOne(pClient);
 }
-//===========================================================================================================
+//=======================================================================================
+void SrvReTranslater::ClientSendData()
+{
+    QTcpSocket* pClient = static_cast<QTcpSocket*>(QObject::sender());
+    pClient->readAll(); //очищаем буффер приема
+    pClient->disconnectFromHost();   //отключаем клиента - по протоколу он не должен ничего слать -> это не наш клиент
+}
+//=======================================================================================

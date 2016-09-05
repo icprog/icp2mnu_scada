@@ -114,6 +114,8 @@ ModbusNode::ModbusNode(int this_number,QString objectName,QString objectType,
                        uint modbus_start_address,
                        uint num_float_tags)
 {
+    logger=Logger::Instance();
+
     m_this_number=this_number;
 
     m_nameObject=objectName;
@@ -209,6 +211,8 @@ void ModbusNode::run()
 //=============================================================================
 MnuScadaNode::MnuScadaNode(int this_number, QString objectName, QString objectType, QString IP_addr, uint port, uint port_repl, uint port_local, uint modbus_start_address, uint num_float_tags)
 {
+    logger=Logger::Instance();
+
     socket = new QTcpSocket(this);
 
     m_this_number=this_number;
@@ -234,6 +238,7 @@ MnuScadaNode::MnuScadaNode(int this_number, QString objectName, QString objectTy
     need_restart_repl=false;
 
     timerConnectLoop.start(1000);
+
 }
 //================================================================================
 MnuScadaNode::~MnuScadaNode()
@@ -710,6 +715,8 @@ VirtualNode::VirtualNode(int this_number,QString objectName,QString objectType,
                          uint modbus_start_address,
                          uint num_float_tags)
 {
+    logger=Logger::Instance();
+
     m_this_number=this_number;
 
     m_nameObject=objectName;
@@ -812,6 +819,8 @@ RegionNode::RegionNode(int this_number,QString objectName,QString objectType,
                        uint modbus_start_address,
                        uint num_float_tags)
 {
+    logger=Logger::Instance();
+
     m_this_number=this_number;
 
     m_nameObject=objectName;
@@ -823,9 +832,180 @@ RegionNode::RegionNode(int this_number,QString objectName,QString objectType,
     m_modbus_start_address=modbus_start_address;
     m_srv.num_float_tags=num_float_tags;
 
+    m_pCmdListenerServerSocket = new QTcpServer(this);
+    m_pCmdListenerServerSocket->listen(QHostAddress::Any, m_port_local+1000);
+
+    m_cmdListenerRequest.cmd=0x00;
+
+    connect(m_pCmdListenerServerSocket, SIGNAL(newConnection()), this, SLOT(CmdListenerNewConnection()));
+
+    connect(this,SIGNAL(cmdListenerResultReady(unsigned char,unsigned char,uint16_t*)),this,SLOT(CmdListenerSendResult(unsigned char,unsigned char,uint16_t*)));
+
+    qDebug() << "region constr";
     start();
 }
 //================================================================================
+RegionNode::~RegionNode()
+{
+    m_pCmdListenerServerSocket->close();
+    m_pCmdListenerClientSocketList.clear();
+    delete m_pCmdListenerServerSocket;
+}
+//================================================================================
+void RegionNode::CmdListenerNewConnection()
+{
+
+    QTcpSocket* pClient = m_pCmdListenerServerSocket->nextPendingConnection();
+    pClient->setSocketOption(QAbstractSocket:: KeepAliveOption, 1);
+
+    m_pCmdListenerClientSocketList.push_back(pClient);
+
+    connect(pClient, SIGNAL(disconnected()), this, SLOT(CmdListenerClientDisconnected()));
+
+
+    //if ( m_pCmdListenerClientSocketList.count()==1)  //монопольный режим
+    //{
+        connect(pClient,SIGNAL(readyRead()),this,SLOT(CmdListenerReadyRead()));
+    //}
+    //else
+    //{
+    //    pClient->disconnectFromHost();
+    //}
+
+    //lastClient=pClient;
+    logger->AddLog(m_nameObject +  ": RegionCtrl connected client "+pClient->peerAddress().toString(), Qt::magenta);
+}
+//======================================================================================
+void RegionNode::CmdListenerClientDisconnected()
+{
+            qDebug() << "region 333333";
+    // client has disconnected, so remove from list
+    QTcpSocket* pClient = static_cast<QTcpSocket*>(QObject::sender());
+    m_pCmdListenerClientSocketList.removeOne(pClient);
+
+    logger->AddLog(m_nameObject +  ": RegionCtrl disconnected client "+ pClient->peerAddress().toString(), Qt::magenta);
+
+}
+//=======================================================================================
+
+/*
+ структура запроса команды на выполнение -
+ команды: запись 1 регистра в HOLDING REGISTERS                    (6 байт = 2 команда + 2 адрес + 2 значение)   0x06 - write single register
+         ЗАПИСЬ 1 значения в COIL STATUS(пуск/останов)             (6 байт = 2 команда + 2 адрес + 2 значение)   0x05(write single coil) (0xFF00 или 0x0000 - другие значения недопустимы по стандарту)
+         запрос чтения одного или более регистров HOLDING REGISTERS(6 байт = 2 команда + 2 адрес + 2 количество) 0x03 - read holding registers
+         запрос чтения одного или более регистров INPUT REGISTERS  (6 байт = 2 команда + 2 адрес + 2 количество) 0x04 - read input registers
+         авторизация ???
+
+ответы:  ОК в ответ на запись в HOLDING REGISTERS           2 байта = 1й байт 0x06 2й 0x00
+         ОК в ответ на запись в COIL STATUS(пуск/останов)   2 байта = 1й байт 0x05 2й 0x00
+         ОК + один или более HOLDING REGISTERS              2 байта = 1й байт 0x03 2й - кол-во регистров + (кол-во регистров)*2 байта
+         ОК + один или более INPUT REGISTERS                2 байта = 1й байт 0x04 2й - кол-во регистров + (кол-во регистров)*2 байта
+
+         ошибка - команда не выполнена, нет связи    2 байта = 1й байт 0xE0 2й- не выполненная cmd (т.е 0x06,0x05,0x03,0x04)   (error 0)
+         ошибка - команда не выполнена               2 байта = 1й байт 0xE1 2й- не выполненная cmd (т.е 0x06,0x05,0x03,0x04)   (error 1)
+         ошибка - выполняю команду, busy             2 байта = 1й байт 0xE2 2й- не выполненная cmd (т.е 0x06,0x05,0x03,0x04)   (error 2)
+                    (одновременно выполняется только 1 команда, очереди команд нет -
+                     защита от одновременного управления и забивания очереди
+                     !!! - нужно подумать о монопольном режиме управления
+
+*/
+//=======================================================================================
+struct
+{
+    unsigned char byte1;
+    unsigned char byte2;
+    uint16_t registers[256];
+} response;
+//=======================================================================================
+void RegionNode::CmdListenerReadyRead()
+{
+
+    QTcpSocket* pClient = static_cast<QTcpSocket*>(QObject::sender());
+
+
+    if (m_cmdListenerRequest.cmd==0x00)  // текущей команды нет
+    {
+        // read the data from the socket
+        if (pClient->bytesAvailable()==sizeof(CmdListenerRequest))
+        {
+
+            pClient->read((char *)(&m_cmdListenerRequest), sizeof(CmdListenerRequest));
+            lastRequestClient=pClient;
+            logger->AddLog(m_nameObject +  ": Region Request: cmd:"+QString::number(m_cmdListenerRequest.cmd)+ " " +
+                                                                                "addr:" + QString::number(m_cmdListenerRequest.addr)+ " " +
+                                                                                "data:" + QString::number(m_cmdListenerRequest.data),Qt::magenta);
+        }
+        else
+        {
+            logger->AddLog(m_nameObject +  ": Region Request: wrong request "+QString::number(pClient->bytesAvailable())+
+                                                               ", need " + QString::number(sizeof(CmdListenerRequest)),Qt::magenta);
+
+            pClient->readAll(); //очищаем буффер приема
+            pClient->disconnectFromHost();//если команда не 6 байт - протокол не наш, отключаем клиента
+        }
+    }
+    else
+    {
+
+        CmdListenerRequest tmp_cmdListenerRequest;
+        tmp_cmdListenerRequest.cmd=0x00;
+
+        if (pClient->bytesAvailable()==sizeof(CmdListenerRequest))
+        {
+            pClient->read((char *)(&tmp_cmdListenerRequest), sizeof(CmdListenerRequest));
+        }
+        else
+        {
+            pClient->readAll(); //очищаем буффер приема
+            pClient->disconnectFromHost();//если команда не 6 байт - протокол не наш, отключаем клиента
+        }
+
+        logger->AddLog(m_nameObject +  ": Region Request: Device Busy: cmd:"+QString::number(tmp_cmdListenerRequest.cmd)+ " " +
+                                                                            "addr:" + QString::number(tmp_cmdListenerRequest.addr)+ " " +
+                                                                            "data:" + QString::number(tmp_cmdListenerRequest.data), Qt::magenta);
+
+        unsigned char ans[2];
+        ans[0]=0xE2;
+        ans[1]=tmp_cmdListenerRequest.cmd;
+        pClient->write((char*) ans,2);       //см. протокол
+    }
+}
+//=======================================================================================
+
+
+//=======================================================================================
+void RegionNode::CmdListenerSendResult(unsigned char byte1, unsigned char byte2, uint16_t *responseData)
+{
+
+
+
+    //send answer to lastRequestClient
+    //if (m_pCmdListenerClientSocketList.first(lastRequestClient)) //check it not disconnected yet, it will be in the list
+    //{
+        response.byte1=byte1;
+        response.byte2=byte2;
+
+        if (responseData!=NULL)
+        {
+            memcpy_s(response.registers,256*sizeof(uint16_t),m_pCmdListenerResponseData,byte2*2);
+        }
+
+        if (byte1==0x03 || byte1==0x04)
+        {
+            lastRequestClient->write((char*) &response,2+byte2*2); //см. протокол - 2 байта + запрошенные регистры
+        }
+        else
+        {
+            lastRequestClient->write((char*) &response,2);       //см. протокол
+        }
+
+        logger->AddLog(m_nameObject +  ": Region Answer: byte1:"+QString::number(response.byte1) +
+                                                         " byte2:" + QString::number(response.byte2), Qt::magenta);
+    //}
+    m_cmdListenerRequest.cmd=0x00;
+
+}
+//=======================================================================================
 void RegionNode::run()
 {
     int res;
@@ -847,7 +1027,7 @@ void RegionNode::run()
             1.0, //9  Дисбаланс напряжений, %
             1.0, //10 Сопротивление изоляции, кОм
             0.01,//11 Коэффициент мощности (cos F)
-            1.0, //12 Коэффициент загрузки
+            1.0, //12 Коэффициент загрузки, %
             1.0, //13 Активная мощность, кВт
             0.1, //14 Ток двигателя, А
             1.0, //15 Температура двигателя, С
@@ -885,7 +1065,7 @@ void RegionNode::run()
     //специфика подключений объектов по этому протоколу  - соединение по GPRS, увеличиваем таймаут ответа
     timeval response_timeout;  // set response timeout to 5 second becouse data transferred througth GPRS connection
     response_timeout.tv_sec=5;
-    modbus_set_response_timeout(mb, &response_timeout);
+
 
     for(;;)
     {
@@ -900,7 +1080,7 @@ void RegionNode::run()
                 m_isConnected=true;
                 modbus_set_slave(mb, 1);
 
-
+                modbus_set_response_timeout(mb, &response_timeout);
 
                 emit textchange(m_this_number,m_nameObject,  "connected");
                 emit textSave2LogFile(m_this_number,m_nameObject,  "connected");
@@ -943,7 +1123,92 @@ void RegionNode::run()
 
         for(int i=0; i<50; ++i) //было 22 - 4.4 sec delay, стало 10 с
         {
-            if (CheckThreadStop()) return;
+            if (m_cmdListenerRequest.cmd!=0x00)  //проверяем наличие команды в очереди, если есть выполняем
+            {
+                if (m_isConnected)
+                {
+
+                    //запись 1 регистра в HOLDING REGISTERS     (6 байт = 2 команда + 2 адрес + 2 значение)   0x06 - write single register
+                    if (m_cmdListenerRequest.cmd==0x06)
+                    {
+                        int res = modbus_write_register(mb,m_cmdListenerRequest.addr, m_cmdListenerRequest.data);
+                        //The function shall return 1 if successful. Otherwise it shall return -1 and set errno.
+
+                        if (res==1)
+                        {
+                            emit cmdListenerResultReady(m_cmdListenerRequest.cmd,0x00,NULL);
+                        }
+                        else
+                        {
+                            emit cmdListenerResultReady(0xE1,m_cmdListenerRequest.cmd,NULL);
+                        }
+                    }
+
+                    //ЗАПИСЬ 1 значения в COIL STATUS(пуск/останов) (6 байт = 2 команда + 2 адрес + 2 значение)   0x05(write single coil) (0xFF00 или 0x0000 - другие значения недопустимы по стандарту)
+                    if (m_cmdListenerRequest.cmd==0x05)
+                    {
+                        int res = modbus_write_bit(mb,m_cmdListenerRequest.addr, m_cmdListenerRequest.data);
+                        //The function shall return 1 if successful. Otherwise it shall return -1 and set errno.
+
+                        if (res==1)
+                        {
+                            emit cmdListenerResultReady(m_cmdListenerRequest.cmd,0x00,NULL);
+                        }
+                        else
+                        {
+                            emit cmdListenerResultReady(0xE1,m_cmdListenerRequest.cmd,NULL);
+                        }
+                    }
+
+                    //запрос чтения одного или более регистров HOLDING REGISTERS(6 байт = 2 команда + 2 адрес + 2 количество) 0x03 - read holding registers
+                    if (m_cmdListenerRequest.cmd==0x03)
+                    {
+                        int res = modbus_read_registers(mb,m_cmdListenerRequest.addr, m_cmdListenerRequest.data, m_pCmdListenerResponseData);
+                        //The function shall return the number of read registers if successful. Otherwise it shall return -1 and set errno.
+
+                        if (res==m_cmdListenerRequest.data)
+                        {
+                            emit cmdListenerResultReady(m_cmdListenerRequest.cmd,m_cmdListenerRequest.data,m_pCmdListenerResponseData);
+                        }
+                        else
+                        {
+                            emit cmdListenerResultReady(0xE1,m_cmdListenerRequest.cmd,NULL);
+                        }
+                    }
+
+                    //запрос чтения одного или более регистров INPUT REGISTERS  (6 байт = 2 команда + 2 адрес + 2 количество) 0x04 - read input registers
+                    if (m_cmdListenerRequest.cmd==0x04)
+                    {
+                        int res = modbus_read_input_registers(mb,m_cmdListenerRequest.addr, m_cmdListenerRequest.data, m_pCmdListenerResponseData);
+                        //The function shall return the number of read registers if successful. Otherwise it shall return -1 and set errno.
+
+                        if (res==m_cmdListenerRequest.data)
+                        {
+                            emit cmdListenerResultReady(m_cmdListenerRequest.cmd,m_cmdListenerRequest.data,m_pCmdListenerResponseData);
+                        }
+                        else
+                        {
+                            emit cmdListenerResultReady(0xE1,m_cmdListenerRequest.cmd,NULL);
+                        }
+                    }
+
+                } //if (m_isConnected)
+                else
+                {
+                    cmdListenerResultReady(0xE0,m_cmdListenerRequest.cmd,NULL); //no connection error
+                }
+
+                //reset command after send response in SLOT RegionNode::CmdListenerSendResult(unsigned char byte1, unsigned char byte2, uint16_t *responseData)
+                // this slot will be connected to SIGNAL cmdListenerResultReady
+
+
+            } //if (m_cmdListenerRequest.cmd!=0x00)  //проверяем наличие команды в очереди, если есть выполняем
+
+            if (CheckThreadStop())
+            {
+                modbus_close(mb);
+                return;
+            }
             Sleep(200);
         }
 

@@ -22,6 +22,7 @@ public:
 public slots:
     // Slot to handle disconnected client
     void ClientDisconnected();
+    void ClientSendData();
 
 private slots:
     // New client connection

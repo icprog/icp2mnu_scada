@@ -23,7 +23,7 @@ struct virt_expr_member_struct
     uint numInBuff;
 };
 
-//сравнение для сортировки по убыванию длины имени объекта, лямбду не принимает
+//сравнение для сортировки по убыванию длины имени объекта
 bool operator<(const virt_expr_member_struct &a, const virt_expr_member_struct &b);
 
 struct virt_tag_struct
@@ -87,6 +87,7 @@ public:
     unsigned int m_this_number;
     ScadaServer *ss;
 
+    Logger *logger;
 private:
     static uint nodes_counter;
 
@@ -186,7 +187,50 @@ public slots:
   адреса начинаются с 0x0100 в области INPUT REGISTERS (30xxxx)(т.е.
   диапазон десятичный адресов - 30257-30288)
 
+  + в диапазоне HOLDING REGISTERS есть регистры для записи в них управляющих значений,
+  для управления открывается отдельный сокет-сервер,
 
+  + команда старт/стоп - модбас команда 0x05 по адресу 0x0201 (write single coil)
+
+*/
+
+/*
+ структура запроса команды на выполнение -
+ команды: запись 1 регистра в HOLDING REGISTERS                    (6 байт = 2 команда + 2 адрес + 2 значение)   0x06 - write single register
+         ЗАПИСЬ 1 значения в COIL STATUS(пуск/останов)             (6 байт = 2 команда + 2 адрес + 2 значение)   0x05(write single coil) (0xFF00 или 0x0000 - другие значения недопустимы по стандарту)
+         запрос чтения одного или более регистров HOLDING REGISTERS(6 байт = 2 команда + 2 адрес + 2 количество) 0x03 - read holding registers
+         запрос чтения одного или более регистров INPUT REGISTERS  (6 байт = 2 команда + 2 адрес + 2 количество) 0x04 - read input registers
+         авторизация ???
+
+ответы:  ОК в ответ на запись в HOLDING REGISTERS           2 байта = 1й байт 0x06 2й 0x00
+         ОК в ответ на запись в COIL STATUS(пуск/останов)   2 байта = 1й байт 0x05 2й 0x00
+         ОК + один или более HOLDING REGISTERS              2 байта = 1й байт 0x03 2й - кол-во регистров + (кол-во регистров)*2 байта
+         ОК + один или более INPUT REGISTERS                2 байта = 1й байт 0x04 2й - кол-во регистров + (кол-во регистров)*2 байта
+
+         ошибка - команда не выполнена, нет связи    2 байта = 1й байт 0xE0 2й- не выполненная cmd (т.е 0x06,0x05,0x03,0x04)   (error 0)
+         ошибка - команда не выполнена               2 байта = 1й байт 0xE1 2й- не выполненная cmd (т.е 0x06,0x05,0x03,0x04)   (error 1)
+         ошибка - выполняю команду, busy             2 байта = 1й байт 0xE2 2й- не выполненная cmd (т.е 0x06,0x05,0x03,0x04)   (error 2)
+                    (одновременно выполняется только 1 команда, очереди команд нет -
+                     защита от одновременного управления и забивания очереди
+                     !!! - нужно подумать о монопольном режиме управления
+
+*/
+//=======================================================================================
+struct CmdListenerRequest
+{
+    uint16_t cmd;
+    uint16_t addr;
+    uint16_t data; // value or number of registers
+};
+
+/*
+struct CmdListenerResponse
+{
+    unsigned char byte1; // cmd- 0x06, 0x05, 0x03, 0x04 or ERROR byte = E0, E1, E2
+    unsigned char byte2; // byte2=0x00 if write command OK, or number of registers if read command OK;
+                         // if number of registers>0 then data written in cmdListenerResponseData array
+                        //  if byte1==error, byte2==command which is not executed (0x06, 0x05, 0x03, 0x04)
+};
 */
 
 class RegionNode: public CommonNode
@@ -198,11 +242,29 @@ public:
                         uint port_repl,uint port_local,
                         uint modbus_start_address,
                         uint num_float_tags);
-    virtual ~RegionNode()
-    {
-        ;
-    }
+    virtual ~RegionNode();
+
     virtual void run();   // poll loop thread
+
+    QTcpServer* m_pCmdListenerServerSocket;
+    QList<QTcpSocket*> m_pCmdListenerClientSocketList;
+
+    QTcpSocket* lastRequestClient;
+    CmdListenerRequest m_cmdListenerRequest;
+    //CmdListenerResponse m_cmdListenerResponse;
+    uint16_t m_pCmdListenerResponseData[256];
+
+public slots:
+    // New client connection
+    void CmdListenerNewConnection();
+    // Slot to handle disconnected client
+    void CmdListenerClientDisconnected();
+    void CmdListenerReadyRead();
+    void CmdListenerSendResult(unsigned char byte1, unsigned char byte2, uint16_t* responseData);
+
+signals:
+    void cmdListenerResultReady(unsigned char byte1, unsigned char byte2, uint16_t* responseData);
+
 };
 
 //==============================================================

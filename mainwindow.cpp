@@ -329,7 +329,7 @@ MainWindow::~MainWindow()
     wait_msg.setText("waiting for release of resources and close connections...");
     wait_msg.setModal(false);
 
-    wait_msg.open(this,NULL);
+    wait_msg.show();// open() (NULL,NULL);
     QApplication::processEvents();
 
     ss->StopServer();
