@@ -200,7 +200,12 @@ void ModbusNode::run()
 
         for(int i=0; i<50; ++i) //было 22 - 4.4 sec delay, стало 10 с
         {
-            if (CheckThreadStop()) return;
+            if (CheckThreadStop())
+            {
+                modbus_close(mb);
+                modbus_free(mb);
+                return;
+            }
             Sleep(200);
         }
 
@@ -1002,7 +1007,7 @@ void RegionNode::CmdListenerSendResult(unsigned char byte1, unsigned char byte2,
         logger->AddLog(m_nameObject +  ": Region Answer: byte1:"+QString::number(response.byte1) +
                                                          " byte2:" + QString::number(response.byte2), Qt::magenta);
     //}
-    m_cmdListenerRequest.cmd=0x00;
+    //m_cmdListenerRequest.cmd=0x00;
 
 }
 //=======================================================================================
@@ -1065,6 +1070,7 @@ void RegionNode::run()
     //специфика подключений объектов по этому протоколу  - соединение по GPRS, увеличиваем таймаут ответа
     timeval response_timeout;  // set response timeout to 5 second becouse data transferred througth GPRS connection
     response_timeout.tv_sec=5;
+    //response_timeout.tv_usec=0;//900000;  // if uncomment not work
 
 
     for(;;)
@@ -1192,12 +1198,14 @@ void RegionNode::run()
                         }
                     }
 
+
                 } //if (m_isConnected)
                 else
                 {
                     cmdListenerResultReady(0xE0,m_cmdListenerRequest.cmd,NULL); //no connection error
                 }
 
+                m_cmdListenerRequest.cmd=0x00;
                 //reset command after send response in SLOT RegionNode::CmdListenerSendResult(unsigned char byte1, unsigned char byte2, uint16_t *responseData)
                 // this slot will be connected to SIGNAL cmdListenerResultReady
 
@@ -1207,6 +1215,7 @@ void RegionNode::run()
             if (CheckThreadStop())
             {
                 modbus_close(mb);
+                modbus_free(mb);
                 return;
             }
             Sleep(200);
