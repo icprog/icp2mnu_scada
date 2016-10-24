@@ -1067,11 +1067,12 @@ void RegionNode::run()
     //inialized context
     mb = modbus_new_tcp(m_IP_addr.toStdString().c_str(), m_port);
 
-    //специфика подключений объектов по этому протоколу  - соединение по GPRS, увеличиваем таймаут ответа
-    timeval response_timeout;  // set response timeout to 5 second becouse data transferred througth GPRS connection
-    response_timeout.tv_sec=5;
-    //response_timeout.tv_usec=0;//900000;  // if uncomment not work
 
+    /*
+   Специфика протокола в том, что нужно устанавливать таймаут не меньше 5 сек. и
+   опрашивать не реже раз в 3 сек, лучше чаще, тем меньше обрывов связи
+   Этот эксперимент подтверждает и модбас полл
+   */
 
     for(;;)
     {
@@ -1080,17 +1081,32 @@ void RegionNode::run()
         {
 
             res=modbus_connect(mb);
+            modbus_set_slave(mb, 1);
+
+            if (modbus_set_response_timeout(mb, 30, 0)==-1) qDebug() << "timeout set error";
+            modbus_set_byte_timeout(mb, 0, 0);
+            //If both to_sec and to_usec are zero, this timeout will not be used at all.
+            //In this case, modbus_set_response_timeout() governs the entire handling of the response,
+            //the full confirmation response must be received before expiration of the response timeout.
+            //When a byte timeout is set, the response timeout is only used to wait for until the first byte of the response.
+
+            //response_timeout.tv_sec=6;
+            //response_timeout.tv_usec=0;
+            //modbus_set_response_timeout(mb, &response_timeout);
 
             if (res!=-1)
             {
                 m_isConnected=true;
-                modbus_set_slave(mb, 1);
 
-                modbus_set_response_timeout(mb, &response_timeout);
+
+
+
+                qDebug() << "region connected";
 
                 emit textchange(m_this_number,m_nameObject,  "connected");
                 emit textSave2LogFile(m_this_number,m_nameObject,  "connected");
                 //srv->m_pServerSocket->setSocketOption(QAbstractSocket:: KeepAliveOption, 1);
+
             }
             else
             {
@@ -1104,6 +1120,8 @@ void RegionNode::run()
         {
 
             res=modbus_read_input_registers(mb, m_modbus_start_address, m_srv.num_float_tags, tab_reg);
+
+            qDebug() << "region read"+ QString::number(res) << "from addr "+QString::number(m_modbus_start_address)+ " waiting"+ QString::number(m_srv.num_float_tags);
 
             if (res==m_srv.num_float_tags)
             {
@@ -1127,7 +1145,7 @@ void RegionNode::run()
         }
 
 
-        for(int i=0; i<50; ++i) //было 22 - 4.4 sec delay, стало 10 с
+        for(int i=0; i<10; ++i) //было 22 - 4.4 sec delay, стало 10 с, стало 2с.,
         {
             if (m_cmdListenerRequest.cmd!=0x00)  //проверяем наличие команды в очереди, если есть выполняем
             {
