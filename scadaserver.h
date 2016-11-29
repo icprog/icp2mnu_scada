@@ -8,11 +8,13 @@
 #include <QTimer>
 //#include "nodes.h"
 #include "alarm.h"
+#include "event.h"
 #include "trendwriter.h"
 
 class CommonNode;
 class CommonTrend;
 class Alarms;
+class Events;
 class TrendWriter;
 struct alarm_tag_struct;
 
@@ -40,6 +42,8 @@ public:
     //Подсистемы СКАДы
     //АЛАРМЫ
     Alarms *alarms;
+
+    Events *events;
     QVector<alarm_tag_struct> vectAlarmTags;
 
     QHash<QString, CommonNode *> hashCommonNodes;

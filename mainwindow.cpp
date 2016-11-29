@@ -167,6 +167,84 @@ MainWindow::MainWindow(QWidget *parent) :
             //logger->AddLog("Added Alarm: "+alarmDescStruct.alarmType+"  " + alarmDescStruct.alarmExpression,Qt::black);
         }
 
+        //[EVENTS]
+        configReader.SeekStartConfig();
+
+        QString eventType;
+        QString eventExpression;
+        QVector<event_expr_member_struct> eventVectExprMembers;
+        QString eventComparison;
+        float eventValue;
+        uint eventDelay_s;
+        QString eventText;
+
+        //event_tag_struct eventDescStruct;
+
+        while(configReader.ReadNextEvent(eventType, eventExpression, eventVectExprMembers,
+                                         eventComparison, eventValue, eventDelay_s, eventText))
+        {
+
+
+
+
+            if (eventType=="disconnect")
+            {
+                if (ss->hashCommonNodes.contains(eventExpression))
+                {
+                    Event *ev= new Event(eventType,eventExpression,eventVectExprMembers,eventComparison,eventValue,eventText,eventDelay_s);
+                    ss->events->AddEvent(ev);
+                }
+                else
+                {
+                    logger->AddLog("ERROR Adding disconnect Event (object not exists): "+eventExpression,Qt::red);
+                }
+            }
+            if (eventType=="connect")
+            {
+                if (ss->hashCommonNodes.contains(eventExpression))
+                {
+                    Event *ev= new Event(eventType,eventExpression,eventVectExprMembers,eventComparison,eventValue,eventText,eventDelay_s);
+                    ss->events->AddEvent(ev);
+                }
+                else
+                {
+                    logger->AddLog("ERROR Adding connect Event (object not exists): "+eventExpression,Qt::red);
+                }
+            }
+            if (eventType=="start" || eventType=="stop" || eventType=="other")
+            {
+                bool allMembersExist=true;
+                foreach(event_expr_member_struct eventExprMember, eventVectExprMembers)
+                {
+                    if (!ss->hashCommonNodes.contains(eventExprMember.objectName)) allMembersExist=false;
+                }
+
+                if (allMembersExist)
+                {
+                    Event *ev= new Event(eventType,eventExpression,eventVectExprMembers,eventComparison,eventValue,eventText,eventDelay_s);
+                    ss->events->AddEvent(ev);
+                }
+                else
+                {
+                    logger->AddLog("ERROR Adding Event (object not exists): "+eventType+"  "+eventExpression +
+                                   " "+eventText,Qt::red);
+
+                }
+
+                //TEST
+                   //foreach(event_expr_member_struct eventExprMember, eventVectExprMembers)
+                   //{
+                   //    logger->AddLog("Added Event Exp Member: "+eventType+"  " + eventExpression + " " +
+                   //                   eventExprMember.objectName+","+QString::number(eventExprMember.numInBuff),Qt::black);
+                   //}
+            }
+
+
+            //TEST
+            //logger->AddLog("Added Event: "+eventType+"  " + eventExpression,Qt::black);
+        }
+
+
         //[VIRTUAL_CONTROLLERS]
         configReader.SeekStartConfig();
 

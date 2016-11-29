@@ -147,6 +147,13 @@ void ModbusNode::run()
     //inialized context
     mb = modbus_new_tcp(m_IP_addr.toStdString().c_str(), m_port);
 
+    if (modbus_set_response_timeout(mb, 20, 0)==-1) qDebug() << "timeout set error";   // до коннекта, так таймаут будет и для коннекта
+    modbus_set_byte_timeout(mb, 0, 0);
+    //If both to_sec and to_usec are zero, this timeout will not be used at all.
+    //In this case, modbus_set_response_timeout() governs the entire handling of the response,
+    //the full confirmation response must be received before expiration of the response timeout.
+    //When a byte timeout is set, the response timeout is only used to wait for until the first byte of the response.
+
     for(;;)
     {
         //connect if not connected
@@ -154,11 +161,13 @@ void ModbusNode::run()
         {
 
             res=modbus_connect(mb);
+            modbus_set_slave(mb, 1);
+
 
             if (res!=-1)
             {
                 m_isConnected=true;
-                modbus_set_slave(mb, 1);
+
 
                 emit textchange(m_this_number,m_nameObject,  "connected");
                 emit textSave2LogFile(m_this_number,m_nameObject,  "connected");
@@ -1073,6 +1082,14 @@ void RegionNode::run()
    опрашивать не реже раз в 3 сек, лучше чаще, тем меньше обрывов связи
    Этот эксперимент подтверждает и модбас полл
    */
+      // до коннекта, так таймаут будет и коннект таймайт
+    if (modbus_set_response_timeout(mb, 30, 0)==-1) qDebug() << "timeout set error";
+    modbus_set_byte_timeout(mb, 0, 0);
+    //If both to_sec and to_usec are zero, this timeout will not be used at all.
+    //In this case, modbus_set_response_timeout() governs the entire handling of the response,
+    //the full confirmation response must be received before expiration of the response timeout.
+    //When a byte timeout is set, the response timeout is only used to wait for until the first byte of the response.
+
 
     for(;;)
     {
@@ -1083,12 +1100,7 @@ void RegionNode::run()
             res=modbus_connect(mb);
             modbus_set_slave(mb, 1);
 
-            if (modbus_set_response_timeout(mb, 30, 0)==-1) qDebug() << "timeout set error";
-            modbus_set_byte_timeout(mb, 0, 0);
-            //If both to_sec and to_usec are zero, this timeout will not be used at all.
-            //In this case, modbus_set_response_timeout() governs the entire handling of the response,
-            //the full confirmation response must be received before expiration of the response timeout.
-            //When a byte timeout is set, the response timeout is only used to wait for until the first byte of the response.
+
 
             //response_timeout.tv_sec=6;
             //response_timeout.tv_usec=0;

@@ -8,6 +8,7 @@ QMutex ScadaServer::mutex;
 ScadaServer::ScadaServer()
 {
     alarms=new Alarms();
+    events=new Events();
 
     logger=Logger::Instance();
 
@@ -35,6 +36,7 @@ ScadaServer::~ScadaServer()
 
 
     delete alarms;
+    delete events;
 
 
     delete theSingleInstanceScadaServer;
@@ -127,7 +129,7 @@ void ScadaServer::TimerEvent5s_checkConnectAndSendToClients()
 void ScadaServer::TimerEvent1s_setAlarmsTags()
 {
 
-    static QScriptEngine alarmScriptEngine;
+    static QScriptEngine scriptEngine;
 
     foreach(alarm_tag_struct alarmDescStruct, vectAlarmTags)
     {
@@ -160,7 +162,7 @@ void ScadaServer::TimerEvent1s_setAlarmsTags()
 
                 }
                 //    logger->AddLog(alarmDescStruct.alarmExpression,Qt::black);
-                tmp_TagValue=alarmScriptEngine.evaluate(tmp_alarmExpression).toNumber();
+                tmp_TagValue=scriptEngine.evaluate(tmp_alarmExpression).toNumber();
 
                 if ( tmp_TagValue!=tmp_TagValue)  //тривиальная проверка на NaN
                 {
@@ -177,6 +179,62 @@ void ScadaServer::TimerEvent1s_setAlarmsTags()
 
         }
     }
+
+
+    //EVENTS
+    foreach(Event *event, events->allEventsList)
+    {
+        if (event->type=="connect" || event->type=="disconnect")
+        {
+            //bool false -> to float ==0
+            //bool true -> to float ==1
+            event->SetValueAndCheckEventUprise(hashCommonNodes[event->expression]->m_isConnected);
+            //logger->AddLog("Changed Conect Event: "+event->expression+"  val="+QString::number(event->expressionValue),Qt::black);
+        }
+        else //start stop other
+        {
+
+            bool  tmp_TagQuality=true;
+            float tmp_TagValue=0.0;
+            QString tmp_eventExpression;
+
+            tmp_eventExpression=event->expression;
+
+            foreach(event_expr_member_struct eventExprMember, event->vectExprMembers)
+            {
+                tmp_TagQuality&=hashCommonNodes[eventExprMember.objectName]->m_isReaded;
+            }
+
+            if (tmp_TagQuality)
+            {
+                foreach(event_expr_member_struct eventExprMember, event->vectExprMembers)
+                {
+                    tmp_eventExpression.replace(eventExprMember.objectName+"["+QString::number(eventExprMember.numInBuff)+"]",
+                                                "("+QString::number(hashCommonNodes[eventExprMember.objectName]->m_srv.buff[eventExprMember.numInBuff])+")");
+
+
+                }
+                //    logger->AddLog(event->expression,Qt::black);
+                tmp_TagValue=scriptEngine.evaluate(tmp_eventExpression).toNumber();
+
+                if ( tmp_TagValue!=tmp_TagValue)  //тривиальная проверка на NaN
+                {
+                    //tmp_TagValue=0.0;
+                    //tmp_TagQuality=false;
+                    logger->AddLog("ERROR evaluate event formula: "+event->expression+"=="+tmp_eventExpression, Qt::red);
+                }
+                else
+                {
+                    //vse OK
+                    event->SetValueAndCheckEventUprise(tmp_TagValue);
+                }
+            }
+
+        }
+
+    }
+
+
 }
 
 //==================================================================================

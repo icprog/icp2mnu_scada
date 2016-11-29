@@ -3,6 +3,7 @@
 
 #include "nodes.h"
 #include "alarm.h"
+#include "event.h"
 #include <QFile>
 #include <QString>
 #include "mainwindow.h"
@@ -25,6 +26,8 @@ public:
     bool ReadNextTrend(QString &objectName, QString &trendName,uint &numInBuff);
     bool ReadNextAlarm(QString &alarmType, QString &alarmExpression, QVector<alarm_expr_member_struct> &alarmVectExprMembers,
                        QString &alarmComparison, float &alarmValue, uint &alarmDelay_s, QString &alarmText);
+    bool ReadNextEvent(QString &eventType, QString &eventExpression, QVector<event_expr_member_struct> &eventVectExprMembers,
+                       QString &eventComparison, float &eventValue, uint &eventDelay_s, QString &eventText);
     bool ReadNextVirtualTag(QString &objectName,uint &numInBuff,QString &virtTagExpression, QVector<virt_expr_member_struct> &virtTagVectExprMembers);
 
 private:
@@ -32,6 +35,7 @@ private:
     bool foundSectionNodes;
     bool foundSectionTrends;
     bool foundSectionAlarms;
+    bool foundSectionEvents;
     bool foundSectionVirtualControllers;
 };
 

@@ -37,6 +37,7 @@ ConfigReader::ConfigReader()
     foundSectionNodes=false;
     foundSectionTrends=false;
     foundSectionAlarms=false;
+    foundSectionEvents=false;
     foundSectionVirtualControllers=false;
 }
 //================================================================
@@ -50,6 +51,7 @@ bool ConfigReader::OpenConfig()
     foundSectionNodes=false;
     foundSectionTrends=false;
     foundSectionAlarms=false;
+    foundSectionEvents=false;
     foundSectionVirtualControllers=false;
     return configFile.open(QIODevice::ReadOnly | QIODevice::Text);
 }
@@ -273,6 +275,116 @@ bool ConfigReader::ReadNextAlarm(QString &alarmType, QString &alarmExpression, Q
 
 }
 //================================================================
+//event pattern  ~=  alarm pattern
+//^(event|connect)\s+([\w\[\]+-]+)([<>=]?)([+-]?\d*\.?\d*)\s+(\d*)\s+(.+)$
+//2 вида алармов по типу:
+//1. алармі связи, вид - connect talal 10 Аларм по соединеие с талал, задержка 10с
+// при таком аларме вектор пустой
+//2. event talal[4]-ggpz_gz[5]>10.0 180 Разница больше 10,задержка 180с.
+//вектор содержит группы знак (+,-), имя узла, номер в буфере узла - из этого складывается результат
+bool ConfigReader::ReadNextEvent(QString &eventType, QString &eventExpression, QVector<event_expr_member_struct> &eventVectExprMembers,
+                                 QString &eventComparison, float &eventValue, uint &eventDelay_s, QString &eventText)
+{
+    if (!foundSectionEvents)
+    {
+        while(!configFile.atEnd())
+        {
+            QString node_conf_line=configFile.readLine();
+            if (node_conf_line.left(strlen("[EVENTS]"))=="[EVENTS]")
+            {
+                foundSectionEvents=true;
+                break;
+            }
+        }
+    }
+
+    while(!configFile.atEnd())
+    {
+        QString node_conf_line=configFile.readLine();
+        //logger->AddLog("Node File: "+node_conf_line,Qt::black);
+
+        QRegExp patternEmptyStr("^\\s*\\n*$");
+
+        if (node_conf_line.length()==0) continue;   //пустые строки
+
+        if (node_conf_line[0]=='#' || patternEmptyStr.indexIn(node_conf_line)!=-1) continue;   //комментарии или строки пробельных символов
+
+        if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
+
+        QRegExp regExp("^(disconnect|connect|start|stop|other)\\s+([\\w\\d\\[\\]+-\\/*\\(\\)]+)([<>=]?)([+-]?\\d*\\.?\\d*)\\s+(\\d*)\\s+(\\S.+[^\\n])\\n*$");
+        if(regExp.indexIn(node_conf_line)!=-1)  //неподходящие строки игнорируем и выводим в лог
+        {
+            eventType=regExp.cap(1);
+
+            if (eventType=="disconnect")
+            {
+                eventExpression=regExp.cap(2);
+                eventComparison="=";
+                eventValue=0;     //disconnect event when isconnected==0
+                eventDelay_s=regExp.cap(5).toUInt();
+                eventText=regExp.cap(6);
+            }
+            if (eventType=="connect")
+            {
+                eventExpression=regExp.cap(2);
+                eventComparison="=";
+                eventValue=1;     //connect event when isconnected==1
+                eventDelay_s=regExp.cap(5).toUInt();
+                eventText=regExp.cap(6);
+            }
+            if (eventType=="start" || eventType=="stop" || eventType=="other")
+            {
+                eventExpression=regExp.cap(2);
+                QString expr_members_line=eventExpression;
+                eventVectExprMembers.clear();
+
+                QRegExp regExpExprMembers("(\\w+)\\[(\\d+)\\]");  //пример: talal[5]   ,  ggpz_gaz[6]   и т.д.
+                while(regExpExprMembers.indexIn(expr_members_line)!=-1)
+                {
+                    event_expr_member_struct member;
+
+                    member.objectName=regExpExprMembers.cap(1);
+                    member.numInBuff=regExpExprMembers.cap(2).toUInt();
+
+                    //отрезать с учетом функций!!!!, т.е. talal[5] может идти не с начала (Math.abs(talal[5]-ggpz_gaz[6])
+
+                    expr_members_line=expr_members_line.right(expr_members_line.length() - regExpExprMembers.pos(1) -
+                                      regExpExprMembers.cap(1).length() -
+                                      regExpExprMembers.cap(2).length() - 2);  //2 - two brackets []
+
+
+                    eventVectExprMembers.append(member);
+                }
+
+                //массив отсортировать по убыванию  длины member.objectName
+                // ЗАЧЕМ: чтобы исключить замену в длинных именах объектов боллее коротких частей (тоже имен обектов)
+                //например "yaroshiv[1]-talal_z_yaroshiv[1]" при подстановке цифры вместо yaroshiv[1]
+                //даст 12.568-talal_z_12.568
+                //поэтому сначала заменять более длинные имена, talal_z_yaroshiv
+
+                qSort(eventVectExprMembers);
+                //лямбду не принимает -
+                //qSort(alarmVectExprMembers.begin(),alarmVectExprMembers.end(),
+                //        [](const alarm_expr_member_struct &a, const alarm_expr_member_struct &b) { return a.objectName.length() > b.objectName.length(); });
+
+                eventComparison=regExp.cap(3);
+                eventValue=regExp.cap(4).toFloat();
+                eventDelay_s=regExp.cap(5).toUInt();
+                eventText=regExp.cap(6);
+            }
+
+            return true;
+        }
+        else
+        {
+            Logger::Instance()->AddLog("Config Event Error Format: "+node_conf_line,Qt::red);
+        }
+    }
+
+    return false;    //достигнут конец файла
+
+}
+//================================================================
 bool ConfigReader::ReadNextVirtualTag(QString &objectName,uint &numInBuff,QString &virtTagExpression, QVector<virt_expr_member_struct> &virtTagVectExprMembers)
 {
     if (!foundSectionVirtualControllers)
@@ -301,7 +413,7 @@ bool ConfigReader::ReadNextVirtualTag(QString &objectName,uint &numInBuff,QStrin
 
         if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
 
-        QRegExp regExp("^(\\w+)\\s+(\\d+)\\s+([\\w\d\\[\\]+-\\/*\\(\\)]+)");  //   \\s?\\n?$");
+        QRegExp regExp("^(\\w+)\\s+(\\d+)\\s+([\\w\\d\\[\\]+-\\/*\\(\\)]+)");  //   \\s?\\n?$");
         if(regExp.indexIn(node_conf_line)!=-1)  //неподходящие строки игнорируем
         {
             objectName=regExp.cap(1);

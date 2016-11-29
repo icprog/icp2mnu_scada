@@ -29,7 +29,8 @@ SOURCES += main.cpp\
     nodedataviewer.cpp \
     scadaserver.cpp \
     trendwriter.cpp \
-    SingleApplication/singleapplication.cpp
+    SingleApplication/singleapplication.cpp \
+    event.cpp
 
 HEADERS  += mainwindow.h \
     autostopthread.h \
@@ -43,7 +44,8 @@ HEADERS  += mainwindow.h \
     nodedataviewer.h \
     scadaserver.h \
     trendwriter.h \
-    SingleApplication/singleapplication.h
+    SingleApplication/singleapplication.h \
+    event.h
 
 FORMS    += mainwindow.ui \
     logger.ui \
