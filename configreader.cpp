@@ -96,7 +96,7 @@ bool ConfigReader::ReadNextNode(QString &objectName,QString &objectType,QString 
 
         if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
 
-        QRegExp regExp("^(\\w+)\\s+(modbus|mnu_scada|virtual|region)\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)");  //   \\s?\\n?$");
+        QRegExp regExp("^(\\w+)\\s+(modbus|mnu_scada|virtual|region|region2)\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)");  //   \\s?\\n?$");
         if(regExp.indexIn(node_conf_line)!=-1)  //неподходящие строки игнорируем и выводим в лог
         {
             //for(int i=1;i<9;++i)

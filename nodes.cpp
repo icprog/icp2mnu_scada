@@ -57,7 +57,19 @@ CommonNode* CommonNode::CreateNode(QString objectName,QString objectType,
 
     }
 
+    //В настройках протокола УМКИ есть параметр "Дискретность давления на входе",
+    //что определяет этот множитель как 1 или 0.01, что определяет разницу между
+    //протоколами region и region2 соответственно, в конструкторе присвоится
+
     if (objectType=="region")
+    {
+        node = new RegionNode(nodes_counter,objectName,objectType,
+                               IP_addr, port,port_repl,port_local,
+                               modbus_start_address,num_float_tags);
+
+    }
+
+    if (objectType=="region2")
     {
         node = new RegionNode(nodes_counter,objectName,objectType,
                                IP_addr, port,port_repl,port_local,
@@ -851,6 +863,9 @@ RegionNode::RegionNode(int this_number,QString objectName,QString objectType,
 
     m_cmdListenerRequest.cmd=0x00;
 
+    if (objectType=="region") m_pressureInMultiplier=1.0;
+    if (objectType=="region2") m_pressureInMultiplier=0.01;
+
     connect(m_pCmdListenerServerSocket, SIGNAL(newConnection()), this, SLOT(CmdListenerNewConnection()));
 
     connect(this,SIGNAL(cmdListenerResultReady(unsigned char,unsigned char,uint16_t*)),this,SLOT(CmdListenerSendResult(unsigned char,unsigned char,uint16_t*)));
@@ -1045,7 +1060,7 @@ void RegionNode::run()
             1.0, //13 Активная мощность, кВт
             0.1, //14 Ток двигателя, А
             1.0, //15 Температура двигателя, С
-            0.01,//16 Давление на приеме насоса, атм
+            m_pressureInMultiplier,//16 Давление на приеме насоса, атм
             0.01,//17 Рабочая частота, Гц
             0.01,//18 Выходная частота, Гц
             1.0, //19 Выходной ток (полный ток СУ), А

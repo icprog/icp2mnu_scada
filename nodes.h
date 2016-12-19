@@ -254,6 +254,17 @@ public:
     //CmdListenerResponse m_cmdListenerResponse;
     uint16_t m_pCmdListenerResponseData[256];
 
+    //В настройках протокола УМКИ есть параметр "Дискретность давления на входе",
+    //что определяет этот множитель как 1 или 0.01, что определяет разницу между
+    //протоколами region и region2 соответственно
+    float m_pressureInMultiplier;
+    void SetPressureInMultiplier(float newPressureInMultiplier)
+    {
+        m_pressureInMultiplier=newPressureInMultiplier;
+    }
+
+
+
 public slots:
     // New client connection
     void CmdListenerNewConnection();
