@@ -902,7 +902,7 @@ void RegionNode::CmdListenerNewConnection()
     //}
 
     //lastClient=pClient;
-    logger->AddLog("RegionCtrl: "+m_nameObject+"connected client "+pClient->peerAddress().toString(), Qt::magenta);
+    logger->AddLog("RegionCtrl: "+m_nameObject+" connected client IP:"+pClient->peerAddress().toString(), Qt::magenta);
 }
 //======================================================================================
 void RegionNode::CmdListenerClientDisconnected()
@@ -912,7 +912,7 @@ void RegionNode::CmdListenerClientDisconnected()
     QTcpSocket* pClient = static_cast<QTcpSocket*>(QObject::sender());
     m_pCmdListenerClientSocketList.removeOne(pClient);
 
-    logger->AddLog("RegionCtrl: "+m_nameObject+"disconnected client "+ pClient->peerAddress().toString(), Qt::magenta);
+    logger->AddLog("RegionCtrl: "+m_nameObject+" disconnected client IP:"+ pClient->peerAddress().toString(), Qt::magenta);
 
 }
 //=======================================================================================
@@ -962,12 +962,14 @@ void RegionNode::CmdListenerReadyRead()
             lastRequestClient=pClient;
             logger->AddLog("RegionCtrl: "+m_nameObject+" request cmd:"+QString::number(m_cmdListenerRequest.cmd)+ " " +
                                                                                 "addr:" + QString::number(m_cmdListenerRequest.addr)+ " " +
-                                                                                "data:" + QString::number(m_cmdListenerRequest.data),Qt::magenta);
+                                                                                "data:" + QString::number(m_cmdListenerRequest.data)+ " IP:" +
+                                                                                pClient->peerAddress().toString(),Qt::magenta);
         }
         else
         {
             logger->AddLog("RegionCtrl: "+m_nameObject+" wrong request: "+QString::number(pClient->bytesAvailable())+
-                                                               ", need " + QString::number(sizeof(CmdListenerRequest)),Qt::magenta);
+                                                               ", need " + QString::number(sizeof(CmdListenerRequest)) + " IP:" +
+                                                                pClient->peerAddress().toString(),Qt::magenta);
 
             pClient->readAll(); //очищаем буффер приема
             pClient->disconnectFromHost();//если команда не 6 байт - протокол не наш, отключаем клиента
@@ -991,7 +993,8 @@ void RegionNode::CmdListenerReadyRead()
 
         logger->AddLog("RegionCtrl: "+m_nameObject+" : Device Busy: cmd:"+QString::number(tmp_cmdListenerRequest.cmd)+ " " +
                                                                             "addr:" + QString::number(tmp_cmdListenerRequest.addr)+ " " +
-                                                                            "data:" + QString::number(tmp_cmdListenerRequest.data), Qt::magenta);
+                                                                            "data:" + QString::number(tmp_cmdListenerRequest.data)+ " IP:" +
+                                                                            pClient->peerAddress().toString(),Qt::magenta);
 
         unsigned char ans[2];
         ans[0]=0xE2;
@@ -1029,7 +1032,8 @@ void RegionNode::CmdListenerSendResult(unsigned char byte1, unsigned char byte2,
         }
 
         logger->AddLog("RegionCtrl: "+m_nameObject+" answer: byte1:"+QString::number(response.byte1) +
-                                                         " byte2:" + QString::number(response.byte2), Qt::magenta);
+                                                         " byte2:" + QString::number(response.byte2)+ " IP:" +
+                                                         lastRequestClient->peerAddress().toString(),Qt::magenta);
     //}
     //m_cmdListenerRequest.cmd=0x00;
 

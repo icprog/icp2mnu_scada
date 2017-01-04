@@ -27,7 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     logger=Logger::Instance();
     logger->InstanceWindow();
-    logger->AddLog("Старт системы",Qt::black);
+    logger->AddLog("SYSTEM: Старт системы",Qt::black);
 
     connect(ui->buttonMessagesShow,SIGNAL(clicked()),SLOT(buttonMessagesShow_clicked()));
     connect(ui->listWidget,SIGNAL(itemDoubleClicked(QListWidgetItem*)),this,SLOT(ViewNodeData(QListWidgetItem*)));
@@ -74,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent) :
             QDir nodeDir(QString(ss->trend_path)+"\\"+node->m_nameObject);
             if (!nodeDir.exists()) nodeDir.mkdir(QString(ss->trend_path)+"\\"+node->m_nameObject);
 
-            logger->AddLog("Added Node: "+node->m_nameObject+": " + node->m_IP_addr+":" + QString::number(node->m_port)+
+            logger->AddLog("SYSTEM: Added Node: "+node->m_nameObject+": " + node->m_IP_addr+":" + QString::number(node->m_port)+
                            "(" + node->m_typeObject + ", tags=" + QString::number(node->m_srv.num_float_tags)+")",Qt::black);
         }
 
@@ -90,7 +90,7 @@ MainWindow::MainWindow(QWidget *parent) :
             {
                 CommonTrend *trend = new CommonTrend(objectName,trendName,numInBuff);
                 ss->vectCommonTrends.append(trend);
-                logger->AddLog("Added Trend: "+trend->m_objectName+"  " + trend->m_trendName+"  " + QString::number(trend->m_numInBuff),Qt::darkBlue);
+                logger->AddLog("SYSTEM: Added Trend: "+trend->m_objectName+"  " + trend->m_trendName+"  " + QString::number(trend->m_numInBuff),Qt::darkBlue);
             }
             else
             {
