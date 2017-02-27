@@ -1206,7 +1206,7 @@ void RegionNode::run()
 
             if (res==m_register_count)
             {
-                for (uint nn=0; nn < m_register_count; ++nn)
+                for (int nn=0; nn < m_register_count; ++nn)
                 {
                     //небольшой костыль - как нибудь надо переделать по уму
                     //преобразуем данные о состоянии СУ и причинах останова в
@@ -1215,18 +1215,24 @@ void RegionNode::run()
                     //buff[1] - состояние СУ
                     if ((m_typeObject=="borec04" || m_typeObject=="borec15") && nn==0)
                     {
-                        if ((tab_reg[0] % 256) == 0xC5 || (tab_reg[0] % 256) == 0xC9 || (tab_reg[0] % 256) == 0xCC)
+
+                        //В Борце 15 в слове состояния байты в обратном порядке по отношению к 4 Борцу
+                        //приводим к единому протоколу меняя порядок байт.
+                        if (m_typeObject=="borec04") tab_reg[0]= (tab_reg[0] % 256)*256 + (tab_reg[0] / 256);
+
+                        if ((tab_reg[0] / 256) == 0xC5 || (tab_reg[0] / 256) == 0xC9 || (tab_reg[0] / 256) == 0xCC)
                         {
                             m_srv.buff[0]=0;
                         }
                         else
                         {
-                            m_srv.buff[0]=tab_reg[0] / 256;
+                            m_srv.buff[0]=tab_reg[0] % 256;
                         }
                         m_srv.buff[1]=tab_reg[0];
 
                         continue;
                     }
+
 
                     if (m_multipliers[nn].index_in_buff !=-1)
                     {
