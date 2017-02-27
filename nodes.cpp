@@ -60,8 +60,9 @@ CommonNode* CommonNode::CreateNode(QString objectName,QString objectType,
     //В настройках протокола УМКИ есть параметр "Дискретность давления на входе",
     //что определяет этот множитель как 1 или 0.01, что определяет разницу между
     //протоколами region и region2 соответственно, в конструкторе присвоится
+    //borec - протоколы СУ "Борец", они преобразуются в протокол "ТРИОЛ" для унификации
 
-    if (objectType=="region")
+    if (objectType=="region" || objectType=="region2" || objectType=="borec04" || objectType=="borec15")
     {
         node = new RegionNode(nodes_counter,objectName,objectType,
                                IP_addr, port,port_repl,port_local,
@@ -69,13 +70,7 @@ CommonNode* CommonNode::CreateNode(QString objectName,QString objectType,
 
     }
 
-    if (objectType=="region2")
-    {
-        node = new RegionNode(nodes_counter,objectName,objectType,
-                               IP_addr, port,port_repl,port_local,
-                               modbus_start_address,num_float_tags);
 
-    }
 
     nodes_counter++;
     return node;
@@ -866,6 +861,96 @@ RegionNode::RegionNode(int this_number,QString objectName,QString objectType,
     if (objectType=="region") m_pressureInMultiplier=1.0;
     if (objectType=="region2") m_pressureInMultiplier=0.01;
 
+    //region=32 parameters
+    if (objectType=="region" || objectType=="region2")
+    {
+        m_register_count=32;
+        m_multipliers.clear();
+        m_multipliers.push_back(Multiplier(1.0, 0));//0  Код причины останова);
+        m_multipliers.push_back(Multiplier(1.0, 1)); //  Состояние СУ+причины, мешающие запуску
+        m_multipliers.push_back(Multiplier(0.1, 2)); //  Ток фазы А, Ампер
+        m_multipliers.push_back(Multiplier(0.1, 3)); //  Ток фазы В
+        m_multipliers.push_back(Multiplier(0.1, 4)); //  Ток фазы С
+        m_multipliers.push_back(Multiplier(1.0, 5)); //  Дисбаланс токов, %
+        m_multipliers.push_back(Multiplier(1.0, 6)); //  Напряжение АВ, Вольт
+        m_multipliers.push_back(Multiplier(1.0, 7)); //  Напряжение ВС, Вольт
+        m_multipliers.push_back(Multiplier(1.0, 8)); //  Напряжение СА, Вольт
+        m_multipliers.push_back(Multiplier(1.0, 9)); //  Дисбаланс напряжений, %
+        m_multipliers.push_back(Multiplier(1.0, 10)); // Сопротивление изоляции, кОм
+        m_multipliers.push_back(Multiplier(0.01,11)); // Коэффициент мощности (cos F)
+        m_multipliers.push_back(Multiplier(1.0, 12)); // Коэффициент загрузки, %
+        m_multipliers.push_back(Multiplier(1.0, 13)); // Активная мощность, кВт
+        m_multipliers.push_back(Multiplier(0.1, 14)); // Ток двигателя, А
+        m_multipliers.push_back(Multiplier(1.0, 15)); // Температура двигателя, С
+        m_multipliers.push_back(Multiplier(m_pressureInMultiplier,16)); // Давление на приеме насоса, атм
+        m_multipliers.push_back(Multiplier(0.01,17)); // Рабочая частота, Гц
+        m_multipliers.push_back(Multiplier(0.01,18)); // Выходная частота, Гц
+        m_multipliers.push_back(Multiplier(1.0, 19)); // Выходной ток (полный ток СУ), А
+        m_multipliers.push_back(Multiplier(1.0, 20)); // Выходное напряжение, В
+        m_multipliers.push_back(Multiplier(1.0, 21)); // Ток в звене постоянного напряжения, В
+        m_multipliers.push_back(Multiplier(1.0, 22)); // Динамический уровень, м
+        m_multipliers.push_back(Multiplier(1.0, 23)); // Общее количество пусков, ед.
+        m_multipliers.push_back(Multiplier(1.0, 24)); // Устьевое давление (буферное давление), атм
+        m_multipliers.push_back(Multiplier(1.0, 25)); // Затрубное давление, атм
+        m_multipliers.push_back(Multiplier(1.0, 26)); // Линейное давление, атм
+        m_multipliers.push_back(Multiplier(1.0, 27)); // Температура на приеме насоса (температура пласт. жидкости, температура окружения), С
+        m_multipliers.push_back(Multiplier(1.0, 28)); // Вибрация насоса по оси X, м/с2
+        m_multipliers.push_back(Multiplier(1.0, 29)); // Вибрация насоса по оси Y, м/с2
+        m_multipliers.push_back(Multiplier(1.0, 30)); // Давление на выкиде насоса, атм
+        m_multipliers.push_back(Multiplier(1.0, 31)); // Температура на выкиде насоса, С
+    }
+
+    //borec=42 parameters
+    if (objectType=="borec04" || objectType=="borec15")
+    {
+        m_register_count=42;
+        m_multipliers.clear();
+        m_multipliers.push_back(Multiplier(1.0, 0)); //  Состояние СУ+причины, мешающие запуску);
+        m_multipliers.push_back(Multiplier(1.0, 13)); //  Активная мощность, кВт
+        m_multipliers.push_back(Multiplier(1.0, 2)); //  Ток фазы А, Ампер
+        m_multipliers.push_back(Multiplier(1.0, 3)); //  Ток фазы В
+        m_multipliers.push_back(Multiplier(1.0, 4)); //  Ток фазы С
+        m_multipliers.push_back(Multiplier(1.0, 10)); //  Сопротивление изоляции, кОм
+        m_multipliers.push_back(Multiplier(0.01, 11)); //  Коэффициент мощности (cos F)
+        m_multipliers.push_back(Multiplier(1.0, -1)); //  Напряжение фазы А, Вольт
+        m_multipliers.push_back(Multiplier(1.0, -1)); //  Напряжение фазы В, Вольт
+        m_multipliers.push_back(Multiplier(1.0, -1)); //  Напряжение фазы С, Вольт
+        m_multipliers.push_back(Multiplier(1.0, 16)); // Давление на приеме насоса, атм
+        m_multipliers.push_back(Multiplier(1.0,-1)); //
+        m_multipliers.push_back(Multiplier(1.0, 27)); // Температура на приеме насоса (температура пласт. жидкости, температура окружения), С
+        m_multipliers.push_back(Multiplier(1.0, 15)); // Температура двигателя, С
+        m_multipliers.push_back(Multiplier(0.1, 28)); // Вибрация насоса по оси X, м/с2
+        m_multipliers.push_back(Multiplier(0.1, 29)); // Вибрация насоса по оси Y, м/с2
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); // Режим работы
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); // Чередование фаз
+        m_multipliers.push_back(Multiplier(0.1, 12)); // Загрузка
+        m_multipliers.push_back(Multiplier(0.1, 18)); // Выходная частота, Гц
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, 6)); // Напряжение АВ, Вольт
+        m_multipliers.push_back(Multiplier(1.0, 7)); // Напряжение ВС, Вольт Давление на выкиде насоса, атм
+        m_multipliers.push_back(Multiplier(1.0, 8)); // Напряжение СА, Вольт Температура на выкиде насоса, С
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, 9)); // Дисбаланс напряжений, %
+        m_multipliers.push_back(Multiplier(1.0, 5)); // Дисбаланс токов, %
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, -1)); //
+        m_multipliers.push_back(Multiplier(1.0, 23)); // Общее количество пусков, ед.
+
+    }
+
+
     connect(m_pCmdListenerServerSocket, SIGNAL(newConnection()), this, SLOT(CmdListenerNewConnection()));
 
     connect(this,SIGNAL(cmdListenerResultReady(unsigned char,unsigned char,uint16_t*)),this,SLOT(CmdListenerSendResult(unsigned char,unsigned char,uint16_t*)));
@@ -1047,41 +1132,6 @@ void RegionNode::run()
     uint16_t tab_reg[200];
 
 
-    float multipliers[32]={
-            1.0, //0  Код причины останова
-            1.0, //1  Состояние СУ+причины, мешающие запуску
-            0.1, //2  Ток фазы А, Ампер
-            0.1, //3  Ток фазы В
-            0.1, //4  Ток фазы С
-            1.0, //5  Дисбаланс токов, %
-            1.0, //6  Напряжение АВ, Вольт
-            1.0, //7  Напряжение ВС, Вольт
-            1.0, //8  Напряжение СА, Вольт
-            1.0, //9  Дисбаланс напряжений, %
-            1.0, //10 Сопротивление изоляции, кОм
-            0.01,//11 Коэффициент мощности (cos F)
-            1.0, //12 Коэффициент загрузки, %
-            1.0, //13 Активная мощность, кВт
-            0.1, //14 Ток двигателя, А
-            1.0, //15 Температура двигателя, С
-            m_pressureInMultiplier,//16 Давление на приеме насоса, атм
-            0.01,//17 Рабочая частота, Гц
-            0.01,//18 Выходная частота, Гц
-            1.0, //19 Выходной ток (полный ток СУ), А
-            1.0, //20 Выходное напряжение, В
-            1.0, //21 Ток в звене постоянного напряжения, В
-            1.0, //22 Динамический уровень, м
-            1.0, //23 Общее количество пусков, ед.
-            1.0, //24 Устьевое давление (буферное давление), атм
-            1.0, //25 Затрубное давление, атм
-            1.0, //26 Линейное давление, атм
-            1.0, //27 Температура на приеме насоса (температура пласт. жидкости, температура окружения), С
-            1.0, //28 Вибрация насоса по оси X, м/с2
-            1.0, //29 Вибрация насоса по оси Y, м/с2
-            1.0, //30 Давление на выкиде насоса, атм
-            1.0, //31 Температура на выкиде насоса, С
-
-            };
 
 
 
@@ -1150,15 +1200,38 @@ void RegionNode::run()
         if (m_isConnected)
         {
 
-            res=modbus_read_input_registers(mb, m_modbus_start_address, m_srv.num_float_tags, tab_reg);
+            res=modbus_read_input_registers(mb, m_modbus_start_address, m_register_count, tab_reg);
 
             qDebug() << "region read"+ QString::number(res) << "from addr "+QString::number(m_modbus_start_address)+ " waiting"+ QString::number(m_srv.num_float_tags);
 
-            if (res==m_srv.num_float_tags)
+            if (res==m_register_count)
             {
-                for (uint nn=0; nn < m_srv.num_float_tags; ++nn)
+                for (uint nn=0; nn < m_register_count; ++nn)
                 {
-                    m_srv.buff[nn]=tab_reg[nn]*multipliers[nn];
+                    //небольшой костыль - как нибудь надо переделать по уму
+                    //преобразуем данные о состоянии СУ и причинах останова в
+                    //представление, подобное протоколу ТРИОЛов - отдельно код причинв останова и состояние:
+                    //buff[0] - код причины останова, 0=работает
+                    //buff[1] - состояние СУ
+                    if ((m_typeObject=="borec04" || m_typeObject=="borec15") && nn==0)
+                    {
+                        if ((tab_reg[0] % 256) == 0xC5 || (tab_reg[0] % 256) == 0xC9 || (tab_reg[0] % 256) == 0xCC)
+                        {
+                            m_srv.buff[0]=0;
+                        }
+                        else
+                        {
+                            m_srv.buff[0]=tab_reg[0] / 256;
+                        }
+                        m_srv.buff[1]=tab_reg[0];
+
+                        continue;
+                    }
+
+                    if (m_multipliers[nn].index_in_buff !=-1)
+                    {
+                        m_srv.buff[m_multipliers[nn].index_in_buff]=tab_reg[nn]*m_multipliers[nn].multiplier;
+                    }
 
                 }
                 m_isReaded=true;

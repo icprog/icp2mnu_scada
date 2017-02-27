@@ -3,6 +3,10 @@
 
 SrvReTranslater::SrvReTranslater()
 {
+    for (int i=0;i++;i<100)
+    {
+        buff[i]=0.0;
+    }
     m_pServerSocket = new QTcpServer(this);
     connect(m_pServerSocket, SIGNAL(newConnection()), this, SLOT(NewConnection()));
 }

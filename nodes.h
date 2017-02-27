@@ -232,6 +232,13 @@ struct CmdListenerResponse
                         //  if byte1==error, byte2==command which is not executed (0x06, 0x05, 0x03, 0x04)
 };
 */
+struct Multiplier
+{
+    Multiplier(){}
+    Multiplier(float mult,int index):multiplier(mult),index_in_buff(index){}
+    float multiplier;
+    int index_in_buff;
+};
 
 class RegionNode: public CommonNode
 {
@@ -253,6 +260,10 @@ public:
     CmdListenerRequest m_cmdListenerRequest;
     //CmdListenerResponse m_cmdListenerResponse;
     uint16_t m_pCmdListenerResponseData[256];
+
+    //
+    int m_register_count;
+    QVector<Multiplier> m_multipliers;
 
     //В настройках протокола УМКИ есть параметр "Дискретность давления на входе",
     //что определяет этот множитель как 1 или 0.01, что определяет разницу между
