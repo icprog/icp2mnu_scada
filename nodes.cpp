@@ -1129,7 +1129,7 @@ void RegionNode::run()
     int res;
 
     modbus_t *mb;
-    uint16_t tab_reg[200];
+    int16_t tab_reg[200];
 
 
 
@@ -1200,7 +1200,7 @@ void RegionNode::run()
         if (m_isConnected)
         {
 
-            res=modbus_read_input_registers(mb, m_modbus_start_address, m_register_count, tab_reg);
+            res=modbus_read_input_registers(mb, m_modbus_start_address, m_register_count, (uint16_t*)tab_reg);
 
             qDebug() << "region read"+ QString::number(res) << "from addr "+QString::number(m_modbus_start_address)+ " waiting"+ QString::number(m_srv.num_float_tags);
 
@@ -1220,13 +1220,13 @@ void RegionNode::run()
                         //приводим к единому протоколу меняя порядок байт.
                         if (m_typeObject=="borec04") tab_reg[0]= (tab_reg[0] % 256)*256 + (tab_reg[0] / 256);
 
-                        if ((tab_reg[0] / 256) == 0xC5 || (tab_reg[0] / 256) == 0xC9 || (tab_reg[0] / 256) == 0xCC)
+                        if ((tab_reg[0] % 256) == 0xC5 || (tab_reg[0] % 256) == 0xC9 || (tab_reg[0] % 256) == 0xCC)
                         {
                             m_srv.buff[0]=0;
                         }
                         else
                         {
-                            m_srv.buff[0]=tab_reg[0] % 256;
+                            m_srv.buff[0]=tab_reg[0] / 256;
                         }
                         m_srv.buff[1]=tab_reg[0];
 
