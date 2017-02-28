@@ -1200,10 +1200,21 @@ void RegionNode::run()
         if (m_isConnected)
         {
 
-            //дадим 4 попытки запроса перед сигнализацией об обрывах связи
-            for(uint attempts=0;attempts<4;++attempts)
+            //дадим 3 попытки запроса перед сигнализацией об обрывах связи
+            //и потом еще 3 с переподключением
+            for(uint attempts=0;attempts<6;++attempts)
             {
-                res=modbus_read_input_registers(mb, m_modbus_start_address, m_register_count, (uint16_t*)tab_reg);
+                if (attempts<3)
+                {
+                    res=modbus_read_input_registers(mb, m_modbus_start_address, m_register_count, (uint16_t*)tab_reg);
+                }
+                else
+                {
+                    modbus_close(mb);
+                    res=modbus_connect(mb);
+                    modbus_set_slave(mb, 1);
+                    res=modbus_read_input_registers(mb, m_modbus_start_address, m_register_count, (uint16_t*)tab_reg);
+                }
 
                 if (res==m_register_count) break;
 
