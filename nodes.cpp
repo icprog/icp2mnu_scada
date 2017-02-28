@@ -1200,7 +1200,22 @@ void RegionNode::run()
         if (m_isConnected)
         {
 
-            res=modbus_read_input_registers(mb, m_modbus_start_address, m_register_count, (uint16_t*)tab_reg);
+            //дадим 4 попытки запроса перед сигнализацией об обрывах связи
+            for(uint attempts=0;attempts<4;++attempts)
+            {
+                res=modbus_read_input_registers(mb, m_modbus_start_address, m_register_count, (uint16_t*)tab_reg);
+
+                if (res==m_register_count) break;
+
+                //при отсутствии связи долгий цикл - добавим проверку закрытия потока (при закрытии программы)
+                if (CheckThreadStop())
+                {
+                    modbus_close(mb);
+                    modbus_free(mb);
+                    return;
+                }
+            }
+
 
             qDebug() << "region read"+ QString::number(res) << "from addr "+QString::number(m_modbus_start_address)+ " waiting"+ QString::number(m_srv.num_float_tags);
 
