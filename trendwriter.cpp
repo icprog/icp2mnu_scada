@@ -43,6 +43,7 @@ void TrendWriter::run()
     int itime,iprevtime=-1;
 
     uint tr_cnt=0;
+    //int tr_number=ss->vectCommonTrends.size();
 
     for(;;)
     {
@@ -60,17 +61,20 @@ void TrendWriter::run()
             foreach (CommonTrend *tr,ss->vectCommonTrends)
             {
 
-                if (ss->hashCommonNodes.contains(tr->m_objectName) && ss->hashCommonNodes[tr->m_objectName]->m_isReaded)
+                if (/*ss->hashCommonNodes.contains(tr->m_objectName) && */ss->hashCommonNodes[tr->m_objectName]->m_isReaded)
                 {
                     FuncFileWriter(tr,buf_date,time22);
                 }
 
-                tr_cnt++;  //уменьшение загрузки CPU,
+
+                tr_cnt++;  //уменьшение загрузки CPU,                
                 if (tr_cnt >= 5)
                 {
                     tr_cnt=0;
                     msleep(10);
                 }
+
+                //usleep(2500000 / tr_number); //растянем запись трендов на 2,5 сек.
             }
         }
         iprevtime=itime;

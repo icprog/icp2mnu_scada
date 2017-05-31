@@ -62,7 +62,7 @@ CommonNode* CommonNode::CreateNode(QString objectName,QString objectType,
     //протоколами region и region2 соответственно, в конструкторе присвоится
     //borec - протоколы СУ "Борец", они преобразуются в протокол "ТРИОЛ" для унификации
 
-    if (objectType=="region" || objectType=="region2" || objectType=="borec04" || objectType=="borec15")
+    if (objectType=="region" || objectType=="region2" || objectType=="borec04" || objectType=="borec15" || objectType=="borec04r" || objectType=="borec15r")
     {
         node = new RegionNode(nodes_counter,objectName,objectType,
                                IP_addr, port,port_repl,port_local,
@@ -890,9 +890,9 @@ RegionNode::RegionNode(int this_number,QString objectName,QString objectType,
         m_multipliers.push_back(Multiplier(1.0, 21)); // Ток в звене постоянного напряжения, В
         m_multipliers.push_back(Multiplier(1.0, 22)); // Динамический уровень, м
         m_multipliers.push_back(Multiplier(1.0, 23)); // Общее количество пусков, ед.
-        m_multipliers.push_back(Multiplier(1.0, 24)); // Устьевое давление (буферное давление), атм
-        m_multipliers.push_back(Multiplier(1.0, 25)); // Затрубное давление, атм
-        m_multipliers.push_back(Multiplier(1.0, 26)); // Линейное давление, атм
+        m_multipliers.push_back(Multiplier(0.1, 24)); // Устьевое давление (буферное давление), атм
+        m_multipliers.push_back(Multiplier(0.1, 25)); // Затрубное давление, атм
+        m_multipliers.push_back(Multiplier(0.1, 26)); // Линейное давление, атм
         m_multipliers.push_back(Multiplier(1.0, 27)); // Температура на приеме насоса (температура пласт. жидкости, температура окружения), С
         m_multipliers.push_back(Multiplier(1.0, 28)); // Вибрация насоса по оси X, м/с2
         m_multipliers.push_back(Multiplier(1.0, 29)); // Вибрация насоса по оси Y, м/с2
@@ -901,7 +901,7 @@ RegionNode::RegionNode(int this_number,QString objectName,QString objectType,
     }
 
     //borec=42 parameters
-    if (objectType=="borec04" || objectType=="borec15")
+    if (objectType=="borec04" || objectType=="borec15" || objectType=="borec04r" || objectType=="borec15r")
     {
         m_register_count=42;
         m_multipliers.clear();
@@ -1152,7 +1152,7 @@ void RegionNode::run()
    Этот эксперимент подтверждает и модбас полл
    */
       // до коннекта, так таймаут будет и коннект таймайт
-    if (modbus_set_response_timeout(mb, 30, 0)==-1) qDebug() << "timeout set error";
+    if (modbus_set_response_timeout(mb, 20, 0)==-1) qDebug() << "timeout set error";
     modbus_set_byte_timeout(mb, 0, 0);
     //If both to_sec and to_usec are zero, this timeout will not be used at all.
     //In this case, modbus_set_response_timeout() governs the entire handling of the response,
@@ -1239,12 +1239,14 @@ void RegionNode::run()
                     //представление, подобное протоколу ТРИОЛов - отдельно код причинв останова и состояние:
                     //buff[0] - код причины останова, 0=работает
                     //buff[1] - состояние СУ
-                    if ((m_typeObject=="borec04" || m_typeObject=="borec15") && nn==0)
+                    if ((m_typeObject=="borec04" || m_typeObject=="borec15" || m_typeObject=="borec04r" || m_typeObject=="borec15r") && nn==0)
                     {
 
-                        //В Борце 15 в слове состояния байты в обратном порядке по отношению к 4 Борцу
+                        //В Борце 04  и в БОРЦЕ-15 разных версий бывает что слово состояния с перевернутыми байтами
+                        //поэтому добавил протоколы borec15r и borec04r - "r" = reversed
                         //приводим к единому протоколу меняя порядок байт.
-                        if (m_typeObject=="borec04") tab_reg[0]= (tab_reg[0] % 256)*256 + (tab_reg[0] / 256);
+
+                        if (m_typeObject=="borec04r" || m_typeObject=="borec15r") tab_reg[0]= (tab_reg[0] << 8) | ((tab_reg[0] >> 8) & 0xFF);;//((uint32_t)tab_reg[0] % 256)*256 + ((uint32_t)tab_reg[0] / 256);
 
                         if ((tab_reg[0] % 256) == 0xC5 || (tab_reg[0] % 256) == 0xC9 || (tab_reg[0] % 256) == 0xCC)
                         {

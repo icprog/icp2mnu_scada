@@ -14,7 +14,7 @@ NodeDataViewer::NodeDataViewer(CommonNode *node, QVector<CommonTrend *> *vectTre
     //заполним хэш соответствия номеров тэгов и их имен для этого конкретного объекта
     foreach(CommonTrend* trend, *vectTrends)
     {
-        if (node->m_nameObject==trend->m_objectName)
+        if (m_node->m_nameObject==trend->m_objectName)
         {
             hashTagNames.insert(trend->m_numInBuff,trend->m_trendName);
         }
@@ -27,6 +27,8 @@ NodeDataViewer::NodeDataViewer(CommonNode *node, QVector<CommonTrend *> *vectTre
         else
             ui->listWidget->addItem(FormattedTagString(m_node->m_nameObject, i, m_node->m_srv.buff[i], ""));
     }
+
+    setWindowTitle(m_node->m_nameObject);
 
     m_timer1s.start(1000);
 }
