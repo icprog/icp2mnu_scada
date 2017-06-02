@@ -76,6 +76,10 @@ void ScadaServer::StopServer()
     //останавливаем потоки опроса узлов
     foreach(CommonNode* node,hashCommonNodes)
     {
+        if (node->m_typeObject=="region" || node->m_typeObject=="region2" || node->m_typeObject=="borec15" || node->m_typeObject=="borec04" || node->m_typeObject=="borec15r" || node->m_typeObject=="borec04r")
+        {
+            node->terminate();
+        }
         delete node;
     }
 

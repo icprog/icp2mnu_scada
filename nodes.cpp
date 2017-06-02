@@ -1152,7 +1152,7 @@ void RegionNode::run()
    Этот эксперимент подтверждает и модбас полл
    */
       // до коннекта, так таймаут будет и коннект таймайт
-    if (modbus_set_response_timeout(mb, 20, 0)==-1) qDebug() << "timeout set error";
+    if (modbus_set_response_timeout(mb, 30, 0)==-1) qDebug() << "timeout set error";
     modbus_set_byte_timeout(mb, 0, 0);
     //If both to_sec and to_usec are zero, this timeout will not be used at all.
     //In this case, modbus_set_response_timeout() governs the entire handling of the response,
