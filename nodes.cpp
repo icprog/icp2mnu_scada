@@ -12,7 +12,8 @@ bool operator<(const virt_expr_member_struct &a, const virt_expr_member_struct &
 //================================================================================
 CommonNode::CommonNode()
 {
-    memset(m_srv.buff,0.0,100);
+    for (int i=0;i<100;++i) m_srv.buff[i]=0.0;
+
     m_text_client="connecting...";
     m_text_repl="";
     m_isConnected=false;
@@ -1254,7 +1255,15 @@ void RegionNode::run()
                         }
                         else
                         {
-                            m_srv.buff[0]=tab_reg[0] / 256;
+                            if (((tab_reg[0] % 256)>=0xB0 && (tab_reg[0] % 256)<=0xB9) && tab_reg[0]/256==0)
+                            {
+                                m_srv.buff[0]=100; //other reasons (MNU don't know)
+                            }
+                            else
+                            {
+                                m_srv.buff[0]=tab_reg[0] / 256;
+                            }
+
                         }
                         m_srv.buff[1]=tab_reg[0];
 

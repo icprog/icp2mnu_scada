@@ -18,6 +18,16 @@ MainWindow::MainWindow(QWidget *parent) :
         trayIcon->show();
     }
 */
+    uint alarmPort;
+    uint eventPort;
+    {
+    QSettings settings(qApp->applicationDirPath()+"\\mnu_scada.conf",QSettings::IniFormat);
+    settings.beginGroup("MAIN");
+
+    alarmPort=settings.value("AlarmsPort",7000).toInt();
+    eventPort=settings.value("EventsPort",7001).toInt();
+    }
+
     ss = ScadaServer::Instance();
 
     connect(ui->buttonClose,SIGNAL(clicked()),this,SLOT(close()));
@@ -166,6 +176,7 @@ MainWindow::MainWindow(QWidget *parent) :
             //TEST
             //logger->AddLog("Added Alarm: "+alarmDescStruct.alarmType+"  " + alarmDescStruct.alarmExpression,Qt::black);
         }
+        ss->alarms->StartAlarmServer(alarmPort);
 
         //[EVENTS]
         configReader.SeekStartConfig();
@@ -243,7 +254,7 @@ MainWindow::MainWindow(QWidget *parent) :
             //TEST
             //logger->AddLog("Added Event: "+eventType+"  " + eventExpression,Qt::black);
         }
-
+        ss->events->StartEventServer(eventPort);
 
         //[VIRTUAL_CONTROLLERS]
         configReader.SeekStartConfig();

@@ -159,6 +159,7 @@ public:
                   float alarmvalue,QString alarmtext, uint alarmdelaySec=0);
     QList < Alarm* > allAlarmsList;
     QList < Alarm* > enabledAlarmList;
+    void StartAlarmServer(uint alarmServerPort);
 
 private:
     static const unsigned int maxEnabledAlarmCount=50;
@@ -166,6 +167,7 @@ private:
     void run();
     Logger *logger;
     OdbcDb *alarmDB;
+    uint m_pAlarmServerPort;
     QTcpServer* m_pAlarmServerSocket;
     QList<QTcpSocket*> m_pAlarmClientSocketList;
     //QTcpSocket* lastClient;

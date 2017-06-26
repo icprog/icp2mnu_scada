@@ -119,11 +119,12 @@ public:
     void SendAllEventsToOneClient(QTcpSocket* pClient);
     void SendNewEventToAllClients(event_message_struct event_message);
     QString GetEventFormattedText(QDateTime dt, QString message);
-
+    void StartEventServer(uint eventServerPort);
 private:
     static const unsigned int maxMessagesListCount=50;
     Logger *logger;
     OdbcDb *eventDB;
+    uint m_pEventServerPort;
     QTcpServer* m_pEventServerSocket;
     QList<QTcpSocket*> m_pEventClientSocketList;
     //QTcpSocket* lastClient;

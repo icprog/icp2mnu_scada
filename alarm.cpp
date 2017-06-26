@@ -285,14 +285,18 @@ Alarms::Alarms()
     alarmDB=new OdbcDb("fire_alarmdb","SYSDBA","784523");
     alarmDB->AddAlarm2DB("Alarms Server Started...");
 
-    logger->AddLog("АЛАРМ: Старт подсистемы...",Qt::darkCyan);
+}
+//=================================================================
+void Alarms::StartAlarmServer(uint alarmServerPort)
+{
 
-//tcp server
-    m_pAlarmServerSocket = new QTcpServer(this);
-    m_pAlarmServerSocket->listen(QHostAddress::Any, 7000);
+    m_pAlarmServerPort=alarmServerPort;
+    logger->AddLog(QString("АЛАРМ: Старт подсистемы на ") + QString::number(m_pAlarmServerPort)+ " порту", Qt::darkCyan);
+    //tcp server
+        m_pAlarmServerSocket = new QTcpServer(this);
+        m_pAlarmServerSocket->listen(QHostAddress::Any, m_pAlarmServerPort);
 
-    connect(m_pAlarmServerSocket, SIGNAL(newConnection()), this, SLOT(NewConnection()));
-
+        connect(m_pAlarmServerSocket, SIGNAL(newConnection()), this, SLOT(NewConnection()));
 }
 //=================================================================
 Alarms::~Alarms()

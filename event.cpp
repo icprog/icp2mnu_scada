@@ -127,8 +127,6 @@ Events::Events()
     eventDB=new OdbcDb("fire_triol","SYSDBA","784523");
     //eventDB->AddEvent2DB(QDateTime::currentDateTime(), "system", "Event Server Started...");
 
-    logger->AddLog("EVENTS: Старт подсистемы...",Qt::darkCyan);
-
     QVector<QString> vect_dt;
     QVector<QString> vect_type;
     QVector<QString> vect_text;
@@ -154,11 +152,19 @@ Events::Events()
 
     }
 
-//tcp server
-    m_pEventServerSocket = new QTcpServer(this);
-    m_pEventServerSocket->listen(QHostAddress::Any, 7001);
 
-    connect(m_pEventServerSocket, SIGNAL(newConnection()), this, SLOT(NewConnection()));
+}
+//==========================================================================================
+void Events::StartEventServer(uint eventServerPort)
+{
+    m_pEventServerPort=eventServerPort;
+
+    logger->AddLog(QString("EVENTS: Старт подсистемы на ") + QString::number(m_pEventServerPort)+ " порту", Qt::darkCyan);
+    //tcp server
+        m_pEventServerSocket = new QTcpServer(this);
+        m_pEventServerSocket->listen(QHostAddress::Any, m_pEventServerPort);
+
+        connect(m_pEventServerSocket, SIGNAL(newConnection()), this, SLOT(NewConnection()));
 }
 //==========================================================================================
 Events::~Events()
