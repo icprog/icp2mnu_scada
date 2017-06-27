@@ -26,6 +26,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     alarmPort=settings.value("AlarmsPort",7000).toInt();
     eventPort=settings.value("EventsPort",7001).toInt();
+    uint viewAlarmList=settings.value("ViewAlarmList",1).toInt();
+    if (viewAlarmList==0) ui->alarmWidget->setVisible(false);
     }
 
     ss = ScadaServer::Instance();
