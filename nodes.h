@@ -36,16 +36,39 @@ struct virt_tag_struct
 //==============================================================
 class CommonTrend
 {
+private:
+    constexpr static const float min_float=-3.4028234663852886e+38;   //минимальное число float, используется как "пустое" значение,
+                                                                      //для отличия от NaN которое обозначает результат некоректного скриптового выражения
+    float lastValues[10];
+
 public:
     CommonTrend(QString objectName,QString trendName,uint numInBuff)
     {
         m_objectName=objectName;
         m_trendName=trendName;
         m_numInBuff=numInBuff;
+        for (int i=0;i<10;++i)
+        {
+            lastValues[i]=min_float;
+        }
     }
     QString m_objectName;
     QString m_trendName;
     uint m_numInBuff;
+
+    void AddLastValue(float val)
+    {
+        for (int i=1;i<10;++i)
+        {
+            lastValues[i]=lastValues[i-1];
+        }
+        lastValues[0]=val;
+    }
+    float GetLastValue(uint depth=0)
+    {
+        if (depth>=10) return min_float;
+        return lastValues[depth];
+    }
 };
 
 enum NodeType

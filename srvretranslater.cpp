@@ -19,13 +19,46 @@ SrvReTranslater::~SrvReTranslater()
 void SrvReTranslater::NewConnection()
 {
     QTcpSocket* pClient = m_pServerSocket->nextPendingConnection();
-    pClient->setSocketOption(QAbstractSocket:: KeepAliveOption, 1);
-    pClient->write((char *)buff,num_float_tags*4);
+
     m_pClientSocketList.push_back(pClient);
 
-    connect(pClient, SIGNAL(disconnected()), this, SLOT(ClientDisconnected()));
-    connect(pClient, SIGNAL(readyRead()), this, SLOT(ClientSendData()));
-    //lastClient=pClient;
+    //Защита от множественных соединений с одного хоста
+    //если кол-во соединений с одного хоста в течении 60 сек
+    //превышает 15, соединения отклоняются
+
+
+    m_pClientDtVector.push_back(QDateTime::currentDateTime());
+    m_pClientIpVector.push_back(pClient->peerAddress().toString());
+
+    for(int i=0;i<m_pClientDtVector.size();++i)
+    {
+        if (m_pClientDtVector[i] < QDateTime::currentDateTime().addSecs(-60))
+        {
+            m_pClientDtVector.remove(i);
+            m_pClientIpVector.remove(i);
+        }
+        else
+        {
+            break;
+        }
+    }
+
+
+    if (m_pClientIpVector.count(pClient->peerAddress().toString()) < 15)
+    {
+
+        pClient->setSocketOption(QAbstractSocket:: KeepAliveOption, 1);
+        pClient->write((char *)buff,num_float_tags*4);
+        connect(pClient, SIGNAL(disconnected()), this, SLOT(ClientDisconnected()));
+        connect(pClient, SIGNAL(readyRead()), this, SLOT(ClientSendData()));
+
+    }
+    else
+    {
+        pClient->disconnectFromHost();
+    }
+
+
 }
 //======================================================================================
 void SrvReTranslater::ClientDisconnected()

@@ -5,6 +5,8 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QList>
+#include <QVector>
+#include <QDateTime>
 
 class SrvReTranslater : public QObject
 {
@@ -17,7 +19,15 @@ public:
     unsigned int num_float_tags; //1 float tag = 2 modbus registers
     QTcpServer* m_pServerSocket;
     QList<QTcpSocket*> m_pClientSocketList;
-    //QTcpSocket* lastClient;
+
+
+    //Защита от множественных соединений с одного хоста
+    //если кол-во соединений с одного хоста в течении 60 сек
+    //превышает 15, соединения отклоняются
+
+    QVector<QString> m_pClientIpVector;
+    QVector<QDateTime> m_pClientDtVector;
+
 
 public slots:
     // Slot to handle disconnected client

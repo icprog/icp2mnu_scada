@@ -20,12 +20,14 @@ MainWindow::MainWindow(QWidget *parent) :
 */
     uint alarmPort;
     uint eventPort;
+    uint trendPort;
     {
     QSettings settings(qApp->applicationDirPath()+"\\mnu_scada.conf",QSettings::IniFormat);
     settings.beginGroup("MAIN");
 
     alarmPort=settings.value("AlarmsPort",7000).toInt();
     eventPort=settings.value("EventsPort",7001).toInt();
+    trendPort=settings.value("TrendsPort",8000).toInt();
     uint viewAlarmList=settings.value("ViewAlarmList",1).toInt();
     if (viewAlarmList==0) ui->alarmWidget->setVisible(false);
     }
@@ -102,6 +104,7 @@ MainWindow::MainWindow(QWidget *parent) :
             {
                 CommonTrend *trend = new CommonTrend(objectName,trendName,numInBuff);
                 ss->vectCommonTrends.append(trend);
+                //ss->trendWriterThread->hashCommonTrends[objectName][trendName]=trend;
                 logger->AddLog("SYSTEM: Added Trend: "+trend->m_objectName+"  " + trend->m_trendName+"  " + QString::number(trend->m_numInBuff),Qt::darkBlue);
             }
             else
@@ -323,6 +326,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     ss->StartServer();
+    ss->trendWriterThread->StartTrendServer(trendPort);
     emit textSave2LogFile(-1, "","ScadaServer started");
 
     connect(ui->button_AcknowledgeLastAlarm, SIGNAL(clicked()),ss->alarms,SLOT(AcknowledgeOneAlarm()));
