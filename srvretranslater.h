@@ -20,13 +20,15 @@ public:
     QTcpServer* m_pServerSocket;
     QList<QTcpSocket*> m_pClientSocketList;
 
-
+    /*
+    //!!! НЕОБХОДИМОСТЬ ОТПАЛА - ПРОБЛЕМА РЕШЕНА
     //Защита от множественных соединений с одного хоста
     //если кол-во соединений с одного хоста в течении 60 сек
     //превышает 15, соединения отклоняются
 
     QVector<QString> m_pClientIpVector;
     QVector<QDateTime> m_pClientDtVector;
+    */
 
 
 public slots:

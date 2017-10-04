@@ -22,6 +22,9 @@ void SrvReTranslater::NewConnection()
 
     m_pClientSocketList.push_back(pClient);
 
+
+    /*
+    //!!! НЕОБХОДИМОСТЬ ОТПАЛА - ПРОБЛЕМА РЕШЕНА
     //Защита от множественных соединений с одного хоста
     //если кол-во соединений с одного хоста в течении 60 сек
     //превышает 15, соединения отклоняются
@@ -47,16 +50,20 @@ void SrvReTranslater::NewConnection()
     if (m_pClientIpVector.count(pClient->peerAddress().toString()) < 15)
     {
 
+    */
+
         pClient->setSocketOption(QAbstractSocket:: KeepAliveOption, 1);
         pClient->write((char *)buff,num_float_tags*4);
         connect(pClient, SIGNAL(disconnected()), this, SLOT(ClientDisconnected()));
         connect(pClient, SIGNAL(readyRead()), this, SLOT(ClientSendData()));
 
+    /*
     }
     else
     {
         pClient->disconnectFromHost();
     }
+    */
 
 
 }

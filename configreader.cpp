@@ -83,12 +83,16 @@ bool ConfigReader::ReadNextNode(QString &objectName,QString &objectType,QString 
         }
     }
 
+
+    QRegExp patternEmptyStr("^\\s*\\n*$");
+    QRegExp regExp("^(\\w+)\\s+(modbus|mnu_scada|virtual|region|region2|borec04|borec15|borec04r|borec15r)\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)");  //   \\s?\\n?$");
+
     while(!configFile.atEnd())
     {
         QString node_conf_line=configFile.readLine();
         //logger->AddLog("Node File: "+node_conf_line,Qt::black);
 
-        QRegExp patternEmptyStr("^\\s*\\n*$");
+
 
         if (node_conf_line.length()==0) continue;   //пустые строки
 
@@ -96,7 +100,7 @@ bool ConfigReader::ReadNextNode(QString &objectName,QString &objectType,QString 
 
         if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
 
-        QRegExp regExp("^(\\w+)\\s+(modbus|mnu_scada|virtual|region|region2|borec04|borec15|borec04r|borec15r)\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)");  //   \\s?\\n?$");
+
         if(regExp.indexIn(node_conf_line)!=-1)  //неподходящие строки игнорируем и выводим в лог
         {
             //for(int i=1;i<9;++i)
@@ -138,12 +142,15 @@ bool ConfigReader::ReadNextTrend(QString &objectName, QString &trendName,uint &n
         }
     }
 
+    QRegExp patternEmptyStr("^\\s*\\n*$");
+    QRegExp regExp("^(\\w+)\\s+(\\w+)\\s+(\\d+)");  //   \\s*\\(.*)$"); - to add trend description to the end of line
+
     while(!configFile.atEnd())
     {
         QString node_conf_line=configFile.readLine();
         //logger->AddLog("Node File: "+node_conf_line,Qt::black);
 
-        QRegExp patternEmptyStr("^\\s*\\n*$");
+
 
         if (node_conf_line.length()==0) continue;   //пустые строки
 
@@ -151,7 +158,7 @@ bool ConfigReader::ReadNextTrend(QString &objectName, QString &trendName,uint &n
 
         if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
 
-        QRegExp regExp("^(\\w+)\\s+(\\w+)\\s+(\\d+)");  //   \\s*\\(.*)$"); - to add trend description to the end of line
+
         if(regExp.indexIn(node_conf_line)!=-1)  //неподходящие строки игнорируем и выводим в лог
         {
             //for(int i=1;i<9;++i)
@@ -196,12 +203,18 @@ bool ConfigReader::ReadNextAlarm(QString &alarmType, QString &alarmExpression, Q
         }
     }
 
+
+    QRegExp patternEmptyStr("^\\s*\\n*$");
+    QRegExp regExp("^(information|warning|critical|connect)\\s+([\\w\\d\\[\\]+-\\/*\\(\\)]+)([<>=]?)([+-]?\\d*\\.?\\d*)\\s+(\\d*)\\s+(\\S.+[^\\n])\\n*$");
+    QRegExp regExpExprMembers("(\\w+)\\[(\\d+)\\]");  //пример: talal[5]   ,  ggpz_gaz[6]   и т.д.
+
+
     while(!configFile.atEnd())
     {
         QString node_conf_line=configFile.readLine();
         //logger->AddLog("Node File: "+node_conf_line,Qt::black);
 
-        QRegExp patternEmptyStr("^\\s*\\n*$");
+
 
         if (node_conf_line.length()==0) continue;   //пустые строки
 
@@ -209,7 +222,7 @@ bool ConfigReader::ReadNextAlarm(QString &alarmType, QString &alarmExpression, Q
 
         if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
 
-        QRegExp regExp("^(information|warning|critical|connect)\\s+([\\w\\d\\[\\]+-\\/*\\(\\)]+)([<>=]?)([+-]?\\d*\\.?\\d*)\\s+(\\d*)\\s+(\\S.+[^\\n])\\n*$");
+
         if(regExp.indexIn(node_conf_line)!=-1)  //неподходящие строки игнорируем и выводим в лог
         {
             alarmType=regExp.cap(1);
@@ -227,7 +240,7 @@ bool ConfigReader::ReadNextAlarm(QString &alarmType, QString &alarmExpression, Q
                 QString expr_members_line=alarmExpression;
                 alarmVectExprMembers.clear();
 
-                QRegExp regExpExprMembers("(\\w+)\\[(\\d+)\\]");  //пример: talal[5]   ,  ggpz_gaz[6]   и т.д.
+
                 while(regExpExprMembers.indexIn(expr_members_line)!=-1)
                 {
                     alarm_expr_member_struct member;
@@ -298,12 +311,17 @@ bool ConfigReader::ReadNextEvent(QString &eventType, QString &eventExpression, Q
         }
     }
 
+
+    QRegExp patternEmptyStr("^\\s*\\n*$");
+    QRegExp regExp("^(disconnect|connect|start|stop|other)\\s+([\\w\\d\\[\\]+-\\/*\\(\\)]+)([<>=]?)([+-]?\\d*\\.?\\d*)\\s+(\\d*)\\s+(\\S.+[^\\n])\\n*$");
+    QRegExp regExpExprMembers("(\\w+)\\[(\\d+)\\]");  //пример: talal[5]   ,  ggpz_gaz[6]   и т.д.
+
     while(!configFile.atEnd())
     {
         QString node_conf_line=configFile.readLine();
         //logger->AddLog("Node File: "+node_conf_line,Qt::black);
 
-        QRegExp patternEmptyStr("^\\s*\\n*$");
+
 
         if (node_conf_line.length()==0) continue;   //пустые строки
 
@@ -311,7 +329,7 @@ bool ConfigReader::ReadNextEvent(QString &eventType, QString &eventExpression, Q
 
         if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
 
-        QRegExp regExp("^(disconnect|connect|start|stop|other)\\s+([\\w\\d\\[\\]+-\\/*\\(\\)]+)([<>=]?)([+-]?\\d*\\.?\\d*)\\s+(\\d*)\\s+(\\S.+[^\\n])\\n*$");
+
         if(regExp.indexIn(node_conf_line)!=-1)  //неподходящие строки игнорируем и выводим в лог
         {
             eventType=regExp.cap(1);
@@ -338,7 +356,6 @@ bool ConfigReader::ReadNextEvent(QString &eventType, QString &eventExpression, Q
                 QString expr_members_line=eventExpression;
                 eventVectExprMembers.clear();
 
-                QRegExp regExpExprMembers("(\\w+)\\[(\\d+)\\]");  //пример: talal[5]   ,  ggpz_gaz[6]   и т.д.
                 while(regExpExprMembers.indexIn(expr_members_line)!=-1)
                 {
                     event_expr_member_struct member;
@@ -400,12 +417,17 @@ bool ConfigReader::ReadNextVirtualTag(QString &objectName,uint &numInBuff,QStrin
         }
     }
 
+    QRegExp patternEmptyStr("^\\s*\\n*$");
+    QRegExp regExp("^(\\w+)\\s+(\\d+)\\s+([\\w\\d\\[\\]+-\\/*\\(\\)]+)");  //   \\s?\\n?$");
+    QRegExp regExpExprMembers("(\\w+)\\[(\\d+)\\]");  //пример: talal[5]   ,  ggpz_gaz[6]   и т.д.
+
+
     while(!configFile.atEnd())
     {
         QString node_conf_line=configFile.readLine();
         //logger->AddLog("Node File: "+node_conf_line,Qt::black);
 
-        QRegExp patternEmptyStr("^\\s*\\n*$");
+
 
         if (node_conf_line.length()==0) continue;   //пустые строки
 
@@ -413,7 +435,7 @@ bool ConfigReader::ReadNextVirtualTag(QString &objectName,uint &numInBuff,QStrin
 
         if (node_conf_line[0]=='[') return false;   //достигнута следующая секция
 
-        QRegExp regExp("^(\\w+)\\s+(\\d+)\\s+([\\w\\d\\[\\]+-\\/*\\(\\)]+)");  //   \\s?\\n?$");
+
         if(regExp.indexIn(node_conf_line)!=-1)  //неподходящие строки игнорируем
         {
             objectName=regExp.cap(1);
@@ -422,7 +444,7 @@ bool ConfigReader::ReadNextVirtualTag(QString &objectName,uint &numInBuff,QStrin
             QString expr_members_line=virtTagExpression;
             virtTagVectExprMembers.clear();
 
-            QRegExp regExpExprMembers("(\\w+)\\[(\\d+)\\]");  //пример: talal[5]   ,  ggpz_gaz[6]   и т.д.
+
             while(regExpExprMembers.indexIn(expr_members_line)!=-1)
             {
                 virt_expr_member_struct member;

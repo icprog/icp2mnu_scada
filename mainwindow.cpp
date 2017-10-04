@@ -18,6 +18,18 @@ MainWindow::MainWindow(QWidget *parent) :
         trayIcon->show();
     }
 */
+
+
+    QMessageBox wait_msg;
+    wait_msg.setStandardButtons(QMessageBox::NoButton);
+    wait_msg.setText("MNU SCADA initializing configuration...");
+    wait_msg.setModal(false);
+
+    wait_msg.show();// open() (NULL,NULL);
+    QApplication::processEvents();
+
+
+
     uint alarmPort;
     uint eventPort;
     uint trendPort;
@@ -42,6 +54,7 @@ MainWindow::MainWindow(QWidget *parent) :
     logger=Logger::Instance();
     logger->InstanceWindow();
     logger->AddLog("SYSTEM: Старт системы",Qt::black);
+
 
     connect(ui->buttonMessagesShow,SIGNAL(clicked()),SLOT(buttonMessagesShow_clicked()));
     connect(ui->listWidget,SIGNAL(itemDoubleClicked(QListWidgetItem*)),this,SLOT(ViewNodeData(QListWidgetItem*)));
@@ -331,6 +344,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->button_AcknowledgeLastAlarm, SIGNAL(clicked()),ss->alarms,SLOT(AcknowledgeOneAlarm()));
     connect(ss->alarms,SIGNAL(EnabledAlarmsChanged(QList<Alarm*>*,bool)),this,SLOT(alarmsChanged(QList<Alarm*>*,bool)));
+
+    wait_msg.close();
 }
 //=========================================================================================================
 void MainWindow::alarmsChanged(QList < Alarm* > *pEnabledAlarmList, bool onlyColorChange)
