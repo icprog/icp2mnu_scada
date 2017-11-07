@@ -339,7 +339,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     ss->StartServer();
-    ss->trendWriterThread->StartTrendServer(trendPort);
+    //ss->trendWriterThread->StartTrendServer(trendPort);
+    ss->trendServer->StartTrendServer(trendPort);
     emit textSave2LogFile(-1, "","ScadaServer started");
 
     connect(ui->button_AcknowledgeLastAlarm, SIGNAL(clicked()),ss->alarms,SLOT(AcknowledgeOneAlarm()));

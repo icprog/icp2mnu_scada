@@ -10,12 +10,14 @@
 #include "alarm.h"
 #include "event.h"
 #include "trendwriter.h"
+#include "trendserver.h"
 
 class CommonNode;
 class CommonTrend;
 class Alarms;
 class Events;
 class TrendWriter;
+class TrendServer;
 struct alarm_tag_struct;
 
 class ScadaServer: public QObject
@@ -49,6 +51,7 @@ public:
     QHash<QString, CommonNode *> hashCommonNodes;
     QVector<CommonTrend *> vectCommonTrends;
     TrendWriter *trendWriterThread;
+    TrendServer *trendServer;
     QTimer timer5s_checkConnectAndSendToClients;
     QTimer timer1s_setAlarmTags;
 public slots:

@@ -30,7 +30,8 @@ SOURCES += main.cpp\
     scadaserver.cpp \
     trendwriter.cpp \
     SingleApplication/singleapplication.cpp \
-    event.cpp
+    event.cpp \
+    trendserver.cpp
 
 HEADERS  += mainwindow.h \
     autostopthread.h \
@@ -45,7 +46,8 @@ HEADERS  += mainwindow.h \
     scadaserver.h \
     trendwriter.h \
     SingleApplication/singleapplication.h \
-    event.h
+    event.h \
+    trendserver.h
 
 FORMS    += mainwindow.ui \
     logger.ui \

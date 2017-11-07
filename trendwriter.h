@@ -5,23 +5,13 @@
 #include "nodes.h"
 #include "logger.h"
 #include <QHash>
-#include <QTcpServer>
+
 
 class ScadaServer;
 class CommonTrend;
 class Logger;
 
-struct trend_query_struct
-{
-    char fileName[32];
-    int year;
-    int month;
-    int day;
-    int hour;
-    int minute;
-    int second;
-    int count;
-};
+
 
 class TrendWriter: public AutoStopThread
 {
@@ -35,21 +25,14 @@ public:
     TrendWriter();
     ~TrendWriter();
 //    QHash< QString, QHash<QString, CommonTrend *> > hashCommonTrends;
-    QTcpServer* m_pTrendServerSocket;
-    QList<QTcpSocket*> m_pTrendClientSocketList;
-    void StartTrendServer(uint trendServerPort);
-    uint m_pTrendServerPort;
 
 
 public slots:
-    //tcp server
-    // Slot to handle disconnected client
-    void ClientDisconnected();
-    void ClientWrite();
+
+
 
 private slots:
-    // New client connection
-    void NewConnection();
+
 
 };
 

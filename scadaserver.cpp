@@ -58,6 +58,8 @@ void ScadaServer::StartServer()
     trendWriterThread = new TrendWriter();
     trendWriterThread->start();
 
+    trendServer = new TrendServer();
+
     connect(&timer1s_setAlarmTags,SIGNAL(timeout()),this,SLOT(TimerEvent1s_setAlarmsTags()));
     timer1s_setAlarmTags.start(1000);
 }
